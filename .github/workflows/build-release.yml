@@ -50,11 +50,31 @@ jobs:
           check-latest: true
           cache-dependency-path: strix/interface/tui/go.sum
 
+      # Fork releases are tagged v<base>-TP-<YYYYMMDD>, which is not a valid Python
+      # version. Derive the PEP 440 form for the wheel and keep the tag's own
+      # spelling for the release and its binaries. Keeping this out of
+      # pyproject.toml is deliberate: that file stays byte-identical to upstream,
+      # so syncing upstream never conflicts on the version line.
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            python scripts/release_version.py "${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            # workflow_dispatch: no tag to read, so fall back to pyproject.
+            VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+            echo "display_version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "package_version=${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build
         shell: bash
         env:
           STRIX_WHEEL_PLATFORM_TAG: ${{ matrix.wheel-platform }}
         run: |
+          python scripts/release_version.py "${{ github.ref_name }}" --write pyproject.toml \
+            || echo "keeping the pyproject version (not a release tag)"
           uv sync --frozen
           uv build --wheel
           uv run python -c 'import glob, os, sys, zipfile; wheels = glob.glob("dist/*.whl"); assert len(wheels) == 1, wheels; archive = zipfile.ZipFile(wheels[0]); tui = "strix/bin/strix-tui.exe" if sys.platform == "win32" else "strix/bin/strix-tui"; assert tui in archive.namelist(); metadata = archive.read(next(name for name in archive.namelist() if name.endswith(".dist-info/WHEEL"))).decode(); assert "Root-Is-Purelib: false" in metadata; assert "Tag: py3-none-" + os.environ["STRIX_WHEEL_PLATFORM_TAG"] in metadata'
@@ -80,7 +100,7 @@ jobs:
             }
           fi
 
-          VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          VERSION="${{ steps.version.outputs.display_version }}"
           mkdir -p dist/release
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then

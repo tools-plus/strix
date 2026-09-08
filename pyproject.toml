@@ -236,6 +236,9 @@ ignore = [
 "tests/test_xai_auth.py" = ["S105", "S106", "SLF001"]
 # Hatchling loads the build hook by path, not as an importable package.
 "scripts/tui_sidecar_hook.py" = ["INP001"]
+# Release helper run as a CLI by the release workflow: it prints to stdout by
+# design (the workflow appends its output to $GITHUB_OUTPUT).
+"scripts/release_version.py" = ["INP001", "T201"]
 # Stdlib HTTP handler overrides (do_GET/do_POST).
 "strix/interface/auth_cli.py" = ["N802"]
 "tests/test_codex_streaming.py" = ["N802"]
