@@ -233,6 +233,7 @@ ignore = [
 "tests/test_cloud_cli.py" = ["S105", "ARG001"]
 "tests/test_subscription_auth.py" = ["S105", "S106", "SLF001"]
 "tests/test_kimi_auth.py" = ["S105", "S106", "SLF001"]
+"tests/test_xai_auth.py" = ["S105", "S106", "SLF001"]
 # Hatchling loads the build hook by path, not as an importable package.
 "scripts/tui_sidecar_hook.py" = ["INP001"]
 # Stdlib HTTP handler overrides (do_GET/do_POST).

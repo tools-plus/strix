@@ -77,9 +77,6 @@ class ContentGuardrailError(Exception):
         )
 
 
-_EXPIRY_SKEW_S = 300
-
-
 class SubscriptionProvider(ABC):
     """Base class for a model-subscription provider.
 
@@ -111,6 +108,11 @@ class SubscriptionProvider(ABC):
     guardrail_markers: tuple[str, ...] = ()
     #: Fields a stored record must carry to count as usable.
     required_record_fields: tuple[str, ...] = ("access", "refresh")
+    #: Fields preserved across a refresh (device ids, discovered endpoints).
+    carry_over_fields: tuple[str, ...] = ()
+    #: Refresh this many seconds before the token actually expires. Providers
+    #: whose backend rejects a nearly-expired token want a wider margin.
+    refresh_skew_s: int = 300
 
     # --- token store ----------------------------------------------------
 
@@ -138,7 +140,7 @@ class SubscriptionProvider(ABC):
         expires_at = record.get("expires_at")
         if not isinstance(expires_at, int | float):
             return True
-        return expires_at - _EXPIRY_SKEW_S <= time.time()
+        return expires_at - self.refresh_skew_s <= time.time()
 
     def get_valid_record(self) -> dict[str, Any]:
         """Return a live token record, refreshing under the cross-process guard
@@ -236,8 +238,9 @@ class SubscriptionProvider(ABC):
             "refresh": refresh,
             "expires_at": time.time() + ttl,
         }
-        if previous and previous.get("device_id"):
-            record["device_id"] = previous["device_id"]
+        for field in self.carry_over_fields:
+            if previous and previous.get(field):
+                record[field] = previous[field]
         return record
 
     # --- inference ------------------------------------------------------
@@ -303,3 +306,37 @@ class SubscriptionProvider(ABC):
                 f"  strix auth login {self.cli_name}"
             )
         return None
+
+
+def clamp_reasoning_effort(effort: str | None) -> str | None:
+    """Map Strix's effort scale onto the three levels these backends accept.
+
+    ``minimal``/``xhigh``/``max`` are Strix extensions; sending them through
+    unmapped gets the request rejected.
+    """
+    if not effort or effort == "none":
+        return None
+    match effort:
+        case "minimal":
+            return "low"
+        case "xhigh" | "max":
+            return "high"
+        case _:
+            return effort
+
+
+def responses_settings_overrides(reasoning_effort: str | None) -> dict[str, Any]:
+    """Per-request overrides every stateless Responses backend needs.
+
+    ``store=False`` because Strix keeps no server-side conversation, and the
+    encrypted reasoning blob must be echoed back for multi-turn reasoning to
+    survive.
+    """
+    overrides: dict[str, Any] = {
+        "store": False,
+        "response_include": ["reasoning.encrypted_content"],
+    }
+    effort = clamp_reasoning_effort(reasoning_effort)
+    if effort:
+        overrides["reasoning_effort"] = effort
+    return overrides

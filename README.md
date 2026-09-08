@@ -307,6 +307,9 @@ export STRIX_LLM="chatgpt/gpt-5.4"   # chatgpt/<model> runs on the subscription
 strix auth login kimi                # Kimi membership — device code, works over SSH
 export STRIX_LLM="kimi/kimi-k3"      # kimi/<model> runs on the subscription
 
+strix auth login grok                # SuperGrok / X Premium — device code
+export STRIX_LLM="grok/grok-4.6"     # grok/<model> runs on the subscription
+
 strix auth status                    # show every active sign-in
 strix auth logout [provider]         # forget one provider, or all of them
 ```
@@ -314,11 +317,19 @@ strix auth logout [provider]         # forget one provider, or all of them
 Tokens are stored per provider in `~/.strix/subscription-auth.json` (mode `0600`), separate from
 `cli-config.json`, and refreshed automatically. Signing in to one provider never disturbs another.
 
+Each prefix selects the subscription; the vendor's metered route keeps its usual name, so
+`grok/grok-4.6` bills your plan while `xai/grok-4.6` bills an API key.
+
 > [!NOTE]
 > Using a consumer subscription outside its vendor's own products is generally not officially
 > supported — you're choosing that path knowingly. Anthropic is the exception that is *not*
 > available here: since February 2026 its Consumer Terms restrict Claude Free/Pro/Max OAuth tokens
 > to Claude Code and Claude.ai, so Claude runs on an API key (`anthropic/<model>`) instead.
+
+> [!WARNING]
+> xAI allowlists its OAuth API surface separately from the in-app subscription, so `strix auth
+> login grok` can succeed while inference returns HTTP 403. Re-signing in does not clear that —
+> use an API key (`LLM_API_KEY` with `STRIX_LLM=xai/grok-4.6`) or check your plan.
 
 #### Use the managed platform: `strix cloud`
 

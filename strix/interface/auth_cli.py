@@ -55,6 +55,12 @@ def _usage() -> str:
     )
 
 
+def _print_usage(console: Console) -> None:
+    """Print usage with Rich markup off: the ``[chatgpt|kimi|grok]`` placeholder
+    is console syntax, and Rich would parse it as a style tag and drop it."""
+    console.print(_usage(), markup=False)
+
+
 def run_auth(argv: list[str]) -> int:
     """Entry point for ``strix auth …``. Returns a process exit code."""
     console = Console()
@@ -63,7 +69,7 @@ def run_auth(argv: list[str]) -> int:
     rest = argv[1:]
 
     if subcommand in ("-h", "--help", "help"):
-        console.print(_usage())
+        _print_usage(console)
         return 0
 
     handlers: dict[str, Callable[[], int]] = {
@@ -76,7 +82,7 @@ def run_auth(argv: list[str]) -> int:
         return handler()
 
     console.print(f"[red]Unknown auth command:[/] {subcommand}\n")
-    console.print(_usage())
+    _print_usage(console)
     return 2
 
 

@@ -18,6 +18,7 @@ import requests
 
 from strix.config import subscription
 from strix.config.subscription import oauth, store
+from strix.config.subscription.base import SubscriptionProvider as SubscriptionProviderBase
 from strix.config.subscription.providers import codex as codex_module
 from strix.config.subscription.providers.codex import CodexProvider
 
@@ -132,12 +133,15 @@ def test_parse_redirect_input(value: str, expected: tuple[str | None, str | None
         ("ChatGPT/GPT-5.5", "GPT-5.5"),
         ("  chatgpt/gpt-5.4  ", "gpt-5.4"),
         ("kimi/kimi-k3", "kimi-k3"),
+        ("grok/grok-4.6", "grok-4.6"),
         ("openai/gpt-5.4", None),  # metered API path
         ("anthropic/claude-opus-4-8", None),
         ("moonshot/kimi-k3", None),  # metered API path, not the subscription
+        ("xai/grok-4.6", None),  # metered API path, not the subscription
         ("gpt-5.4", None),
         ("chatgpt/", None),
         ("kimi/", None),
+        ("grok/", None),
         ("", None),
         (None, None),
     ],
@@ -155,6 +159,10 @@ def test_resolve_returns_the_owning_provider() -> None:
     assert resolved is not None
     assert resolved[0].name == "kimi"
 
+    resolved = subscription.resolve("grok/grok-4.6")
+    assert resolved is not None
+    assert resolved[0].name == "xai"
+
     assert subscription.resolve("anthropic/claude-opus-5") is None
 
 
@@ -167,6 +175,9 @@ def test_resolve_returns_the_owning_provider() -> None:
         ("kimi", "kimi"),
         ("kimi-code", "kimi"),
         ("moonshot", "kimi"),
+        ("grok", "xai"),
+        ("xai", "xai"),
+        ("supergrok", "xai"),
         ("gemini", None),
         ("", None),
         (None, None),
@@ -196,6 +207,8 @@ def test_provider_lookup_keys_do_not_collide_across_providers() -> None:
 def test_auth_mode() -> None:
     assert subscription.auth_mode("chatgpt/gpt-5.4") == "subscription"
     assert subscription.auth_mode("kimi/kimi-k3") == "subscription"
+    assert subscription.auth_mode("grok/grok-4.6") == "subscription"
+    assert subscription.auth_mode("xai/grok-4.6") == "api_key"
     assert subscription.auth_mode("openai/gpt-5.4") == "api_key"
     assert subscription.auth_mode("anthropic/claude-opus-4-8") == "api_key"
     assert subscription.auth_mode(None) == "api_key"
@@ -503,3 +516,24 @@ def test_codex_settings_overrides_clamp_reasoning_effort(codex: CodexProvider) -
     overrides = codex.settings_overrides("high")
     assert overrides["store"] is False
     assert overrides["response_include"] == ["reasoning.encrypted_content"]
+
+
+@pytest.mark.parametrize("provider", subscription.all_providers(), ids=lambda p: p.name)
+def test_every_provider_declares_a_coherent_identity(provider: Any) -> None:
+    assert provider.model_prefix == f"{provider.cli_name}/" or provider.model_prefix.endswith("/")
+    assert provider.example_model.startswith(provider.model_prefix)
+    assert subscription.resolve(provider.example_model) == (
+        provider,
+        provider.example_model[len(provider.model_prefix) :],
+    )
+    assert provider.display_name and provider.plan_hint
+    # Whichever flow it declares, its hooks must be implemented.
+    if provider.flow is subscription.AuthFlow.DEVICE_CODE:
+        assert (
+            type(provider).start_device_authorization
+            is not SubscriptionProviderBase.start_device_authorization
+        )
+    else:
+        assert (
+            type(provider).build_authorize_url is not SubscriptionProviderBase.build_authorize_url
+        )

@@ -186,3 +186,58 @@ def poll_device_token(
             description = data.get("error_description")
             raise SubscriptionAuthError(str(error), str(description or error))
         raise SubscriptionAuthError("token_http_error", f"HTTP {status_code}: {detail}")
+
+
+def validate_endpoint(url: str, *, allowed_hosts: tuple[str, ...], field: str) -> str:
+    """Reject an OAuth endpoint that is not HTTPS on an expected host.
+
+    Discovered endpoints are cached in the token store, so a tampered or
+    hand-edited store could otherwise redirect every future refresh token to an
+    attacker's host. Re-validating on each use keeps that closed.
+    """
+    parsed = urllib.parse.urlparse((url or "").strip())
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise SubscriptionAuthError("bad_endpoint", f"{field} must be an https URL, got: {url!r}")
+    host = parsed.hostname.lower()
+    if not any(host == allowed or host.endswith(f".{allowed}") for allowed in allowed_hosts):
+        raise SubscriptionAuthError(
+            "bad_endpoint", f"{field} host {host!r} is not one of {allowed_hosts}"
+        )
+    return url.strip()
+
+
+def discover_endpoints(
+    discovery_url: str,
+    *,
+    allowed_hosts: tuple[str, ...],
+    timeout: int = TOKEN_TIMEOUT_S,
+) -> dict[str, Any]:
+    """Fetch an OpenID Connect discovery document and validate its endpoints.
+
+    Providers that publish discovery are read rather than hardcoded, so an
+    endpoint move does not need a Strix release.
+    """
+    try:
+        with requests.get(
+            discovery_url, headers={"Accept": "application/json"}, timeout=timeout
+        ) as response:
+            status_code = response.status_code
+            body = response.content
+            detail = response.text[:300] if status_code >= 400 else ""
+    except requests.RequestException as exc:
+        raise SubscriptionAuthError("unavailable", str(exc)) from exc
+    if status_code >= 400:
+        raise SubscriptionAuthError("discovery_failed", f"HTTP {status_code}: {detail}")
+    try:
+        data = json.loads(body or b"{}")
+    except json.JSONDecodeError as exc:
+        raise SubscriptionAuthError("discovery_failed", "discovery returned invalid JSON") from exc
+    if not isinstance(data, dict):
+        raise SubscriptionAuthError("discovery_failed", "discovery returned a non-object")
+    token_endpoint = data.get("token_endpoint")
+    if not isinstance(token_endpoint, str) or not token_endpoint:
+        raise SubscriptionAuthError("discovery_failed", "discovery has no token_endpoint")
+    data["token_endpoint"] = validate_endpoint(
+        token_endpoint, allowed_hosts=allowed_hosts, field="token_endpoint"
+    )
+    return data

@@ -12,13 +12,12 @@ and telemetry all read the registry. A provider whose backend speaks a wire
 protocol not in :class:`~strix.config.subscription.base.Wire` also needs a
 branch in :func:`strix.config.models.build_subscription_model`.
 
-Two shapes are already covered end to end. ``chatgpt`` is a browser/loopback
-PKCE flow onto an OpenAI *Responses* backend; ``kimi`` is a device-code flow
-onto an OpenAI *chat-completions* backend. A provider like xAI's Grok
-(SuperGrok / X Premium, device-code against ``accounts.x.ai``, chat-completions
-via its CLI proxy, and a plan-specific model slug) is the second shape plus a
-:meth:`~strix.config.subscription.base.SubscriptionProvider.model_slug`
-override, so it needs no new machinery.
+Both flows and both wire protocols are covered end to end, and the three
+registered providers between them exercise every combination in use:
+``chatgpt`` is a browser/loopback PKCE flow onto a *Responses* backend,
+``kimi`` a device-code flow onto a *chat-completions* backend, and ``grok`` a
+device-code flow onto a *Responses* backend. A fourth provider is therefore
+almost always an existing pair, and needs no new machinery.
 
 What must not be added
 ----------------------
@@ -36,6 +35,7 @@ from typing import TYPE_CHECKING
 from strix.config.subscription.base import ContentGuardrailError
 from strix.config.subscription.providers.codex import CodexProvider
 from strix.config.subscription.providers.kimi import KimiProvider
+from strix.config.subscription.providers.xai import GrokProvider
 
 
 if TYPE_CHECKING:
@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 PROVIDERS: tuple[SubscriptionProvider, ...] = (
     CodexProvider(),
     KimiProvider(),
+    GrokProvider(),
 )
 
 
