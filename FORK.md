@@ -88,9 +88,18 @@ git push -u origin upstream/<topic>
 # open the PR against usestrix/strix:main
 ```
 
-The subscription-provider work has such a branch already:
-`claude/strix-oauth-providers-6rdee8`, cut from upstream `main` and carrying no
-fork-only files.
+Everything on `master` is upstream-appropriate **except** these, which must
+never appear in an upstream PR:
+
+- `FORK.md` (this file)
+- `scripts/release_version.py` and `tests/test_release_version.py`
+- the `Resolve version` step and the `display_version` reference in
+  `.github/workflows/build-release.yml`
+- the `scripts/release_version.py` entry in `pyproject.toml`'s ruff ignores
+
+Cherry-picking the feature commits onto a branch cut from `upstream/main` gives
+exactly that split, so the branch is disposable — cut a fresh one whenever you
+want to open or refresh a PR.
 
 If upstream merges it, the next sync brings it back through `main` and the
 duplicate commits drop out in the merge. If they never do, nothing changes — we
