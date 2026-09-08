@@ -19,7 +19,7 @@ from openai import (
     APITimeoutError,
 )
 
-from strix.config import codex
+from strix.config import subscription
 from strix.core.hooks import (
     BudgetExceededError,
     BudgetPausedError,
@@ -130,7 +130,7 @@ def _model_error_status_code(exc: BaseException) -> int | None:
 
 
 def _is_transient_model_error(exc: BaseException) -> bool:
-    if codex.is_content_guardrail_error(exc):
+    if subscription.is_content_guardrail_error(exc):
         return False
     if isinstance(
         exc, APITimeoutError | APIConnectionError | TimeoutError | ConnectionError | OSError

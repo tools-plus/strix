@@ -29,7 +29,7 @@ from openai.types.responses import (
     ResponseOutputText,
 )
 
-from strix.config import codex, loader
+from strix.config import loader, subscription
 from strix.config.loader import load_settings
 from strix.config.models import StrixProvider, _NonStreamingModel, _TurnGuardModel
 
@@ -320,8 +320,12 @@ def test_get_model_guards_subscription_model_but_keeps_it_streaming(
 ) -> None:
     # Subscription (ChatGPT) models are always streamed, so LLM_DISABLE_STREAMING
     # must not apply — but a runaway response needs capping there too.
-    monkeypatch.setattr(codex, "subscription_model", lambda *_: "gpt-5.5")
-    monkeypatch.setattr(codex, "get_subscription_client", lambda: AsyncOpenAI(api_key="x"))
+    provider = subscription.get_provider("chatgpt")
+    assert provider is not None
+    monkeypatch.setattr(provider, "get_client", lambda: AsyncOpenAI(api_key="x"))
+    monkeypatch.setattr(
+        "strix.config.models.subscription.resolve", lambda *_: (provider, "gpt-5.5")
+    )
     monkeypatch.setenv("LLM_DISABLE_STREAMING", "true")
     load_settings()
 

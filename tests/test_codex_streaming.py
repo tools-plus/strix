@@ -1,7 +1,7 @@
 """Regression test for the ChatGPT Codex backend's streaming requirement.
 
 The backend rejects non-streamed requests with ``{"detail": "Stream must be set
-to true"}``. ``_CodexResponsesModel`` must therefore issue a streamed request
+to true"}``. ``_SubscriptionResponsesModel`` must therefore issue a streamed request
 even from the non-streaming ``get_response`` path and aggregate the events into
 a single response. A local server that mimics that behaviour proves the wrapper
 works where the stock responses model would fail.
@@ -21,8 +21,9 @@ from agents.models.openai_responses import OpenAIResponsesModel
 from openai import AsyncOpenAI, BadRequestError
 from openai.types.responses import ResponseOutputMessage, ResponseOutputText
 
-from strix.config import codex
-from strix.config.models import _CodexResponsesModel
+from strix.config import subscription
+from strix.config.models import _SubscriptionResponsesModel
+from strix.config.subscription.providers.codex import CodexProvider
 
 
 if TYPE_CHECKING:
@@ -113,6 +114,10 @@ def _client(base_url: str) -> AsyncOpenAI:
     return AsyncOpenAI(api_key="tok", base_url=base_url)
 
 
+def _codex_model(model: str, base_url: str, **kwargs: Any) -> _SubscriptionResponsesModel:
+    return _SubscriptionResponsesModel(model, _client(base_url), provider=CodexProvider(), **kwargs)
+
+
 def _call_kwargs() -> dict[str, Any]:
     return {
         "system_instructions": "s",
@@ -139,7 +144,7 @@ async def test_stock_model_fails_on_non_streamed_backend(backend_url: str) -> No
 
 @pytest.mark.asyncio
 async def test_codex_model_streams_and_aggregates(backend_url: str) -> None:
-    model = _CodexResponsesModel(model="gpt-5.5", openai_client=_client(backend_url))
+    model = _codex_model("gpt-5.5", backend_url)
     response = await model.get_response(**_call_kwargs())
     message = response.output[0]
     assert isinstance(message, ResponseOutputMessage)
@@ -179,10 +184,10 @@ async def _drain(gen: AsyncIterator[Any]) -> list[Any]:
 @pytest.mark.asyncio
 async def test_guarded_converts_guardrail_error() -> None:
     # A mid-stream backend rejection becomes a typed, model-tagged error.
-    model = _CodexResponsesModel(model="gpt-5.6-sol", openai_client=_client("http://x/backend-api"))
+    model = _codex_model("gpt-5.6-sol", "http://x/backend-api")
     guardrail = RuntimeError("This content was flagged for possible cybersecurity risk.")
     stream = _TrackingStream(["a", "b"], guardrail)
-    with pytest.raises(codex.CodexContentGuardrailError) as exc_info:
+    with pytest.raises(subscription.ContentGuardrailError) as exc_info:
         await _drain(model._guarded(stream))
     assert exc_info.value.model == "gpt-5.6-sol"
     assert stream.closed is True  # underlying stream is released
@@ -191,7 +196,7 @@ async def test_guarded_converts_guardrail_error() -> None:
 @pytest.mark.asyncio
 async def test_guarded_passes_through_other_errors() -> None:
     # A non-guardrail error propagates unchanged (still not swallowed).
-    model = _CodexResponsesModel(model="gpt-5.5", openai_client=_client("http://x/backend-api"))
+    model = _codex_model("gpt-5.5", "http://x/backend-api")
     boom = RuntimeError("some unrelated failure")
     stream = _TrackingStream(["a"], boom)
     with pytest.raises(RuntimeError, match="some unrelated failure"):
@@ -201,7 +206,7 @@ async def test_guarded_passes_through_other_errors() -> None:
 
 @pytest.mark.asyncio
 async def test_guarded_yields_all_events_when_clean() -> None:
-    model = _CodexResponsesModel(model="gpt-5.4", openai_client=_client("http://x/backend-api"))
+    model = _codex_model("gpt-5.4", "http://x/backend-api")
     stream = _TrackingStream(["a", "b", "c"], None)
     assert await _drain(model._guarded(stream)) == ["a", "b", "c"]
     assert stream.closed is True
@@ -212,9 +217,7 @@ async def test_codex_model_self_enforces_backend_requirements(backend_url: str) 
     # The caller passes ordinary settings; the model must impose the backend's
     # requirements (stream, store=false, encrypted reasoning) and the configured
     # reasoning effort itself.
-    model = _CodexResponsesModel(
-        model="gpt-5.4", openai_client=_client(backend_url), reasoning_effort="high"
-    )
+    model = _codex_model("gpt-5.4", backend_url, reasoning_effort="high")
     kwargs = _call_kwargs()
     kwargs["model_settings"] = ModelSettings()  # nothing special from the caller
     await model.get_response(**kwargs)

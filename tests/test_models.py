@@ -5,11 +5,15 @@ from __future__ import annotations
 import pytest
 from agents.extensions.models.litellm_model import LitellmModel
 from agents.model_settings import ModelSettings
+from openai import AsyncOpenAI
 
+from strix.config import loader, subscription
 from strix.config.models import (
     RECOMMENDED_MODEL_NAMES,
     StrixProvider,
     _NonStreamingModel,
+    _SubscriptionChatModel,
+    _SubscriptionResponsesModel,
     _TurnGuardModel,
     is_recommended_or_frontier_model,
     request_timeout_extra_args,
@@ -168,3 +172,28 @@ def test_routes_through_litellm_matches_the_provider(
     while isinstance(model, _NonStreamingModel | _TurnGuardModel):
         model = model._inner
     assert isinstance(model, LitellmModel) is litellm
+
+
+@pytest.mark.parametrize(
+    ("model_name", "expected"),
+    [
+        ("chatgpt/gpt-5.4", _SubscriptionResponsesModel),
+        ("kimi/kimi-k3", _SubscriptionChatModel),
+    ],
+)
+def test_get_model_builds_the_wire_specific_subscription_model(
+    model_name: str, expected: type, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A provider's declared wire protocol picks the SDK model class."""
+    monkeypatch.delenv("STRIX_LLM", raising=False)
+    monkeypatch.setattr(loader, "_cached", None)
+    monkeypatch.setattr(loader, "_override", None)
+
+    resolved = subscription.resolve(model_name)
+    assert resolved is not None
+    provider, _slug = resolved
+    monkeypatch.setattr(provider, "get_client", lambda: AsyncOpenAI(api_key="x"))
+
+    model = StrixProvider().get_model(model_name)
+    assert isinstance(model, _TurnGuardModel)
+    assert isinstance(model._inner, expected)

@@ -13,7 +13,7 @@ import asyncio
 
 from agents.retry import ModelRetryNormalizedError, RetryPolicyContext
 
-from strix.config import codex
+from strix.config import subscription
 from strix.config.models import DEFAULT_MODEL_RETRY, _retry_statusless_provider_errors
 
 
@@ -69,7 +69,7 @@ def test_timeout_error_is_retried() -> None:
 def test_content_guardrail_error_is_not_retried() -> None:
     # A guardrail block is status-less, so it would match the statusless policy;
     # the guard must keep it from being retried (retrying never clears it).
-    guardrail = codex.CodexContentGuardrailError("gpt-5.6-sol")
+    guardrail = subscription.ContentGuardrailError("gpt-5.6-sol", "ChatGPT")
     assert _retries(ModelRetryNormalizedError(status_code=None), guardrail) is False
     # A raw provider error carrying the backend's wording is excluded too.
     raw = RuntimeError("This content was flagged for possible cybersecurity risk.")

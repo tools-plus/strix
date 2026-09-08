@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
-from strix.config import codex, load_settings, persist_current
+from strix.config import load_settings, persist_current, subscription
 from strix.core.paths import run_dir_for
 from strix.interface.cli_args import parse_arguments
 from strix.interface.environment import (
@@ -113,26 +113,15 @@ def _provider_import_hint(exc: BaseException, model: str) -> str | None:
 
 
 def _subscription_error_hint(exc: BaseException) -> str | None:
-    """Return an actionable hint for a known ChatGPT-subscription error, or None."""
-    if not codex.subscription_model(load_settings().llm.model):
+    """Return an actionable hint for a known model-subscription error, or None.
+
+    The provider owns its own diagnostics, so a new provider brings its hints
+    with it.
+    """
+    provider = subscription.provider_for(load_settings().llm.model)
+    if provider is None:
         return None
-    joined = " ".join(_exception_messages(exc)).lower()
-    if "not supported when using codex with a chatgpt account" in joined:
-        return (
-            "This model isn't available on your ChatGPT subscription. "
-            "Set STRIX_LLM to a model your plan includes (e.g. chatgpt/gpt-5.4)."
-        )
-    if (
-        "error code: 401" in joined
-        or "http 401" in joined
-        or "unauthorized" in joined
-        or "invalid_grant" in joined
-    ):
-        return (
-            "Your ChatGPT sign-in has expired or was revoked. Sign in again:\n"
-            "  strix auth login chatgpt"
-        )
-    return None
+    return provider.error_hint(" ".join(_exception_messages(exc)).lower())
 
 
 async def warm_up_llm(show_model_warning: bool = True) -> None:
