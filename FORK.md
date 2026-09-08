@@ -45,6 +45,41 @@ Our diff against upstream is kept deliberately narrow:
 - **Edits to existing files are kept minimal** and, where possible, expressed as
   a registry entry or a new branch in a `match` rather than a rewrite.
 
+## CI
+
+`.github/workflows/ci.yml` runs ruff, mypy and pytest on every push and PR to
+`master`. It needs no secrets. Upstream ships no CI workflow, so this is
+fork-only — and it is what catches a bad upstream sync before a release tag
+does.
+
+## Installing
+
+Our releases are built by `build-release.yml` and attached to the GitHub
+Release. Two ways in, neither needing a Go toolchain:
+
+```bash
+# Standalone binary — no Python required
+curl -sSL -o strix https://github.com/tools-plus/strix/releases/download/<tag>/strix-<version>-linux-x86_64
+chmod +x strix
+
+# Or the platform wheel
+pipx install https://github.com/tools-plus/strix/releases/download/<tag>/strix_agent-<pkg-version>-py3-none-manylinux_2_17_x86_64.whl
+```
+
+Installing straight from the repo works too, but **builds from source and so
+needs Go 1.24+** (`scripts/tui_sidecar_hook.py` compiles the Bubble Tea
+sidecar into the wheel and fails without it):
+
+```bash
+pipx install git+https://github.com/tools-plus/strix@master   # requires Go
+```
+
+That is fine for developers and wrong for users. Upstream publishes
+`strix-agent` to PyPI as platform wheels only — deliberately no sdist, so
+nobody ever builds it at install time. We cannot reuse that name; publishing
+our own PyPI package under a fork name is the only way to get a bare
+`pipx install <name>`, and is not set up today.
+
 ## Releases
 
 Releases are tag-driven. Tag `master`, and `.github/workflows/build-release.yml`

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push to the same branch/PR supersedes this run.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86  # v5.4.2
+        with:
+          enable-cache: true
+
+      # `uv sync` installs the project editable, which skips the wheel's Go
+      # build hook — but parts of the suite exercise the TUI sidecar, so the
+      # toolchain has to be here.
+      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00  # v6.0.0
+        with:
+          go-version: '1.24.x'
+          check-latest: true
+          cache-dependency-path: strix/interface/tui/go.sum
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Each check runs even if an earlier one fails, so one push surfaces
+      # every problem instead of one per round trip.
+      - name: Lint (ruff)
+        if: ${{ !cancelled() }}
+        run: uv run ruff check --output-format=github strix/ tests/ scripts/
+
+      - name: Format (ruff)
+        if: ${{ !cancelled() }}
+        run: uv run ruff format --check strix/ tests/ scripts/
+
+      - name: Type check (mypy)
+        if: ${{ !cancelled() }}
+        run: uv run mypy strix/
+
+      - name: Tests (pytest)
+        if: ${{ !cancelled() }}
+        run: uv run pytest -q
