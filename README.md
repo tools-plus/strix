@@ -293,7 +293,7 @@ export LLM_API_BASE="your-api-base-url"  # if using a local model, e.g. Ollama, 
 ```
 
 > [!NOTE]
-> Strix automatically saves your configuration to `~/.strix/cli-config.json`, so you don't have to re-enter it on every run.
+> Strix automatically saves your configuration to `~/.strix-pentest/cli-config.json`, so you don't have to re-enter it on every run.
 > See the [configuration reference](https://docs.strix.ai/advanced/configuration) for every environment variable.
 
 #### Sign in with a model subscription
@@ -314,7 +314,7 @@ strix auth status                    # show every active sign-in
 strix auth logout [provider]         # forget one provider, or all of them
 ```
 
-Tokens are stored per provider in `~/.strix/subscription-auth.json` (mode `0600`), separate from
+Tokens are stored per provider in `~/.strix-pentest/subscription-auth.json` (mode `0600`), separate from
 `cli-config.json`, and refreshed automatically. Signing in to one provider never disturbs another.
 
 Each prefix selects the subscription; the vendor's metered route keeps its usual name, so
@@ -348,7 +348,7 @@ See the [cloud CLI documentation](https://docs.strix.ai/cloud/cli) for scopes, w
 
 #### Connect your own MCP servers
 
-Strix can connect to Model Context Protocol (MCP) servers you list and expose their tools to the agent during a run. Create `~/.strix/mcp-servers.json` with a JSON list of local `stdio` servers or remote `http` servers:
+Strix can connect to Model Context Protocol (MCP) servers you list and expose their tools to the agent during a run. Create `~/.strix-pentest/mcp-servers.json` with a JSON list of local `stdio` servers or remote `http` servers:
 
 ```json
 [

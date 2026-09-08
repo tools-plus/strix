@@ -1,7 +1,7 @@
 """The runner attaches MCP connections source-agnostically.
 
 When a caller supplies ``mcp_connection_requests`` the runner attaches those;
-when it does not, the runner reads ``~/.strix/mcp-servers.json`` itself and wraps
+when it does not, the runner reads ``~/.strix-pentest/mcp-servers.json`` itself and wraps
 each config in a bare request. Either way the one shared ``attach_mcp_requests``
 routine does the connecting.
 """

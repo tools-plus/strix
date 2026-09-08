@@ -225,14 +225,18 @@ Strix Cloud:
     parser.add_argument(
         "--config",
         type=str,
-        help="Path to a custom config file (JSON) to use instead of ~/.strix/cli-config.json",
+        help=(
+            "Path to a custom config file (JSON) to use instead of ~/.strix-pentest/cli-config.json"
+        ),
     )
 
     parser.add_argument(
         "--mcp-config",
         type=str,
         metavar="PATH",
-        help="Path to an MCP servers JSON file to use instead of ~/.strix/mcp-servers.json.",
+        help=(
+            "Path to an MCP servers JSON file to use instead of ~/.strix-pentest/mcp-servers.json."
+        ),
     )
 
     parser.add_argument(

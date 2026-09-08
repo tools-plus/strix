@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 @pytest.fixture(autouse=True)
 def _tmp_auth(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     home = tmp_path / "home"
-    monkeypatch.setattr(auth, "AUTH_PATH", home / ".strix" / "viewer-auth.json")
+    monkeypatch.setattr(auth, "AUTH_PATH", home / ".strix-pentest" / "viewer-auth.json")
     return auth.AUTH_PATH
 
 

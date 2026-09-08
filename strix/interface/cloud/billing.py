@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import strix.interface.cloud.http as http  # noqa: PLR0402
+from strix.core.branding import config_path
 from strix.interface.cloud.payment_proxy import WalletUpstreamResponse, wallet_payment_bridge
 from strix.interface.cloud.render import emit
 from strix.interface.terminal_text import sanitize_terminal_text
@@ -553,7 +554,7 @@ def _npx_prefix(npx: str, wallet_root: Path) -> list[str]:
 
 def _wallet_npm_cache() -> Path:
     """Keep one private npm cache so the pinned wallet client installs once."""
-    cache = Path.home() / ".strix" / "wallet-npm-cache"
+    cache = config_path("wallet-npm-cache")
     cache.mkdir(mode=0o700, parents=True, exist_ok=True)
     return cache
 

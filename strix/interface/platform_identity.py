@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import json
 import platform
-from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 
+from strix.core.branding import config_path
 from strix.utils.secret_files import write_secret_text
 
 
-IDENTITY_PATH = Path.home() / ".strix" / "cli-identity.json"
+IDENTITY_PATH = config_path("cli-identity.json")
 
 
 def _default_device_name(instance_id: str) -> str:

@@ -219,7 +219,7 @@ async def run_strix_scan(
     and context.
     ``mcp_connection_requests`` supplies the run's MCP connections from any
     source: when given, the engine connects those requests; when ``None`` (the
-    command-line default) it reads ``~/.strix/mcp-servers.json`` itself. Either
+    command-line default) it reads ``~/.strix-pentest/mcp-servers.json`` itself. Either
     way the engine does the connecting, so the caller passes inert configs plus
     metadata and never live sessions.
     """
@@ -391,7 +391,7 @@ async def run_strix_scan(
         # per-run registry. The connections are source-agnostic: a caller
         # (the SaaS/pro product) can supply them as mcp_connection_requests, and
         # when it does not the command-line path reads them from
-        # ~/.strix/mcp-servers.json here. Either way one shared engine routine
+        # ~/.strix-pentest/mcp-servers.json here. Either way one shared engine routine
         # does the connecting and populating. Nothing is registered as an agent
         # tool: every agent reaches these connections on demand through the
         # list_mcps / describe_mcp / call_mcp tools, guided by brief static prompt

@@ -5,17 +5,18 @@ from __future__ import annotations
 import json
 import logging
 import os
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pydantic import AliasChoices, BaseModel
 
 from strix.config.settings import LlmSettings, Settings
+from strix.core.branding import config_path
 from strix.utils.secret_files import write_secret_text
 
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+    from pathlib import Path
 
     from pydantic.fields import FieldInfo
 
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-_DEFAULT_PATH: Path = Path.home() / ".strix" / "cli-config.json"
+_DEFAULT_PATH: Path = config_path("cli-config.json")
 _override: Path | None = None
 _cached: Settings | None = None
 

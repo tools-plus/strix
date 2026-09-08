@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 @pytest.fixture(autouse=True)
 def _tmp_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(store, "AUTH_PATH", tmp_path / "home" / ".strix" / "subscription-auth.json")
+    monkeypatch.setattr(
+        store, "AUTH_PATH", tmp_path / "home" / ".strix-pentest" / "subscription-auth.json"
+    )
 
 
 def _codex() -> Any:

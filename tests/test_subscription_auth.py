@@ -38,7 +38,7 @@ def _fake_jwt(account_id: str) -> str:
 
 @pytest.fixture(autouse=True)
 def _tmp_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    path = tmp_path / "home" / ".strix" / "subscription-auth.json"
+    path = tmp_path / "home" / ".strix-pentest" / "subscription-auth.json"
     monkeypatch.setattr(store, "AUTH_PATH", path)
     return path
 

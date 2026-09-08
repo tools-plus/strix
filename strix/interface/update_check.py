@@ -30,6 +30,7 @@ import requests
 from rich.console import Console
 from rich.prompt import Prompt
 
+from strix.core.branding import config_path
 from strix.telemetry._common import get_version
 
 
@@ -40,7 +41,7 @@ PYPI_PACKAGE = "strix-agent"
 CHECK_INTERVAL_SECONDS = 24 * 60 * 60
 REQUEST_TIMEOUT_SECONDS = 5
 
-_CACHE_PATH = Path.home() / ".strix" / "update-check.json"
+_CACHE_PATH = config_path("update-check.json")
 
 _background_thread: threading.Thread | None = None
 

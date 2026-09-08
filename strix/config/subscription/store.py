@@ -11,9 +11,9 @@ import base64
 import contextlib
 import json
 import threading
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from strix.core.branding import config_path
 from strix.utils.secret_files import write_secret_text
 
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
-AUTH_PATH = Path.home() / ".strix" / "subscription-auth.json"
+AUTH_PATH = config_path("subscription-auth.json")
 
 _refresh_locks: dict[str, threading.Lock] = {}
 _locks_guard = threading.Lock()

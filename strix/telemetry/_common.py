@@ -4,9 +4,10 @@ import logging
 import platform
 import sys
 from importlib.metadata import PackageNotFoundError, version
-from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
+
+from strix.core.branding import config_path
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def is_first_run() -> bool:
     global _FIRST_RUN_CACHED  # noqa: PLW0603
     if _FIRST_RUN_CACHED is not None:
         return _FIRST_RUN_CACHED
-    marker = Path.home() / ".strix" / ".seen"
+    marker = config_path(".seen")
     if marker.exists():
         _FIRST_RUN_CACHED = False
         return False

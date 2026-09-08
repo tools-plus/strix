@@ -12,7 +12,7 @@ def _isolate_mcp_config(
     """Keep the whole suite from reading the developer's real MCP config.
 
     ``run_strix_scan`` connects the MCP servers listed in
-    ``~/.strix/mcp-servers.json`` and threads an inventory of them into the
+    ``~/.strix-pentest/mcp-servers.json`` and threads an inventory of them into the
     prompt context. Without isolation, any test that drives the runner on a
     machine that has a real config would do real network I/O and see MCP
     connections it never asked for. Point the loader at a path that does not

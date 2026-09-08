@@ -26,7 +26,7 @@ TOKEN_ENDPOINT = "https://auth.x.ai/oauth2/token"
 
 @pytest.fixture(autouse=True)
 def _tmp_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    path = tmp_path / "home" / ".strix" / "subscription-auth.json"
+    path = tmp_path / "home" / ".strix-pentest" / "subscription-auth.json"
     monkeypatch.setattr(store, "AUTH_PATH", path)
     return path
 

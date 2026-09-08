@@ -1,6 +1,6 @@
 """``strix auth`` — model-subscription sign-in (login / status / logout).
 
-Signing in only stores OAuth tokens (``~/.strix/subscription-auth.json``); model
+Signing in only stores OAuth tokens (``~/.strix-pentest/subscription-auth.json``); model
 selection stays with ``STRIX_LLM``. A ``<provider>/<model>`` STRIX_LLM (e.g.
 ``chatgpt/gpt-5.4``, ``kimi/kimi-k3``) runs on that provider's subscription.
 

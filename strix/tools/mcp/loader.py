@@ -1,4 +1,4 @@
-"""Read the open-source user's MCP servers from ``~/.strix/mcp-servers.json``.
+"""Read the open-source user's MCP servers from ``~/.strix-pentest/mcp-servers.json``.
 
 An open-source user lists the MCP servers they want the agent to reach in a
 small JSON file. Strix reads it at the start of a run and connects to each
@@ -21,13 +21,14 @@ from typing import cast
 
 from pydantic import ValidationError
 
+from strix.core.branding import config_path
 from strix.tools.mcp.config import McpConnectionConfig
 
 
 logger = logging.getLogger(__name__)
 
 
-_DEFAULT_PATH: Path = Path.home() / ".strix" / "mcp-servers.json"
+_DEFAULT_PATH: Path = config_path("mcp-servers.json")
 _PATH_ENV_VAR = "STRIX_MCP_CONFIG"
 # Per-run selection, set by the --mcp-server / --mcp-exclude CLI flags. Each is a
 # comma-separated list of connection names.
@@ -102,7 +103,7 @@ def load_user_mcp_configs(path: Path | None = None) -> list[McpConnectionConfig]
     """Load MCP connection configs from the user's JSON file.
 
     The path is ``path`` if given, else ``$STRIX_MCP_CONFIG``, else
-    ``~/.strix/mcp-servers.json``. The file is a JSON list of server entries.
+    ``~/.strix-pentest/mcp-servers.json``. The file is a JSON list of server entries.
     A missing file returns ``[]``; an unreadable or non-list file is logged and
     returns ``[]``; individual entries that fail validation are logged and
     skipped. Connections sharing a name are de-duplicated (first wins), and an
