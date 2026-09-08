@@ -296,15 +296,29 @@ export LLM_API_BASE="your-api-base-url"  # if using a local model, e.g. Ollama, 
 > Strix automatically saves your configuration to `~/.strix/cli-config.json`, so you don't have to re-enter it on every run.
 > See the [configuration reference](https://docs.strix.ai/advanced/configuration) for every environment variable.
 
-#### Sign in with a ChatGPT subscription
+#### Sign in with a model subscription
 
-Instead of a metered API key, you can run Strix on your ChatGPT Plus/Pro subscription:
+Instead of a metered API key, you can run Strix on a consumer plan you already pay for:
 
 ```bash
-strix auth login chatgpt             # sign in with your ChatGPT account
+strix auth login chatgpt             # ChatGPT Plus/Pro — browser sign-in
 export STRIX_LLM="chatgpt/gpt-5.4"   # chatgpt/<model> runs on the subscription
-strix auth status                    # show the active sign-in, or logout to forget it
+
+strix auth login kimi                # Kimi membership — device code, works over SSH
+export STRIX_LLM="kimi/kimi-k3"      # kimi/<model> runs on the subscription
+
+strix auth status                    # show every active sign-in
+strix auth logout [provider]         # forget one provider, or all of them
 ```
+
+Tokens are stored per provider in `~/.strix/subscription-auth.json` (mode `0600`), separate from
+`cli-config.json`, and refreshed automatically. Signing in to one provider never disturbs another.
+
+> [!NOTE]
+> Using a consumer subscription outside its vendor's own products is generally not officially
+> supported — you're choosing that path knowingly. Anthropic is the exception that is *not*
+> available here: since February 2026 its Consumer Terms restrict Claude Free/Pro/Max OAuth tokens
+> to Claude Code and Claude.ai, so Claude runs on an API key (`anthropic/<model>`) instead.
 
 #### Use the managed platform: `strix cloud`
 

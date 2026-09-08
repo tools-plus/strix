@@ -15,7 +15,7 @@ from openai import (
     RateLimitError,
 )
 
-from strix.config import codex
+from strix.config import subscription
 from strix.core import execution
 from strix.core.agents import AgentCoordinator
 
@@ -75,7 +75,7 @@ def test_content_guardrail_is_not_retried() -> None:
         _request(),
         body=None,
     )
-    assert codex.is_content_guardrail_error(guardrail) is True
+    assert subscription.is_content_guardrail_error(guardrail) is True
     assert execution._is_transient_model_error(guardrail) is False
 
 

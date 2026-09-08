@@ -231,12 +231,14 @@ ignore = [
 # args they intentionally ignore.
 "tests/test_viewer_auth.py" = ["S105", "S106", "ARG001"]
 "tests/test_cloud_cli.py" = ["S105", "ARG001"]
-"tests/test_codex_auth.py" = ["S105", "S106", "SLF001"]
+"tests/test_subscription_auth.py" = ["S105", "S106", "SLF001"]
+"tests/test_kimi_auth.py" = ["S105", "S106", "SLF001"]
 # Hatchling loads the build hook by path, not as an importable package.
 "scripts/tui_sidecar_hook.py" = ["INP001"]
 # Stdlib HTTP handler overrides (do_GET/do_POST).
 "strix/interface/auth_cli.py" = ["N802"]
 "tests/test_codex_streaming.py" = ["N802"]
+"tests/test_auth_cli.py" = ["PLC0415"]
 "tests/test_disable_streaming.py" = ["N802"]
 "tests/test_tool_call_ids.py" = ["N802"]
 "tests/test_tool_call_limits.py" = ["N802", "SLF001"]
@@ -309,8 +311,9 @@ ignore = [
 "strix/telemetry/logging.py" = ["PLC0415"]
 "strix/config/models.py" = ["PLC0415"]
 # Heavy inference deps (httpx, openai) imported lazily so auth-status checks
-# don't pull them in.
-"strix/config/codex.py" = ["PLC0415"]
+# don't pull them in; fcntl is optional (POSIX-only) in the refresh guard.
+"strix/config/subscription/providers/*.py" = ["PLC0415"]
+"strix/config/subscription/store.py" = ["PLC0415"]
 # Interface utility branches per scope-mode / target-type combination;
 # splitting would obscure the decision tree without simplifying it.
 "strix/interface/utils.py" = ["PLR0912", "BLE001", "PLC0415"]

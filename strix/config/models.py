@@ -9,7 +9,7 @@ import logging
 import os
 import time
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, assert_never, cast
 
 from agents import (
     set_default_openai_api,
@@ -20,6 +20,7 @@ from agents.model_settings import ModelSettings
 from agents.models.fake_id import FAKE_RESPONSES_ID
 from agents.models.interface import Model, ModelProvider
 from agents.models.multi_provider import MultiProvider
+from agents.models.openai_chatcompletions import OpenAIChatCompletionsModel
 from agents.models.openai_responses import OpenAIResponsesModel
 from agents.retry import (
     ModelRetryBackoffSettings,
@@ -36,8 +37,9 @@ from openai.types.responses import (
 from openai.types.responses.response_usage import ResponseUsage
 from openai.types.shared import Reasoning
 
-from strix.config import codex
+from strix.config import subscription
 from strix.config.loader import load_settings
+from strix.config.subscription import ContentGuardrailError, Wire
 from strix.config.tool_call_ids import TurnCallIdRewriter, dedupe_input
 from strix.config.tool_call_limits import TurnToolCallLimiter
 
@@ -56,6 +58,7 @@ if TYPE_CHECKING:
     from openai.types.responses.response_prompt_param import ResponsePromptParam
 
     from strix.config.settings import LlmSettings, ReasoningEffort, Settings
+    from strix.config.subscription import SubscriptionProvider
 
 
 logger = logging.getLogger(__name__)
@@ -73,66 +76,39 @@ def _retry_statusless_provider_errors(context: RetryPolicyContext) -> bool:
     normalized = context.normalized
     if normalized.is_abort:
         return False
-    if codex.is_content_guardrail_error(context.error):
+    if subscription.is_content_guardrail_error(context.error):
         return False
     return normalized.status_code is None
 
 
-class _CodexResponsesModel(OpenAIResponsesModel):
-    """Responses model for the ChatGPT subscription backend (always streamed, stateless)."""
+def _overrides_to_settings(overrides: dict[str, Any]) -> ModelSettings | None:
+    """Turn a provider's ``settings_overrides`` dict into ``ModelSettings``.
 
-    def __init__(
-        self,
-        model: str,
-        openai_client: AsyncOpenAI,
-        *,
-        reasoning_effort: ReasoningEffort | None = None,
-    ) -> None:
-        super().__init__(model, openai_client)
-        self._reasoning_effort = reasoning_effort
+    Providers return plain data so :mod:`strix.config.subscription` need not
+    import the agents SDK; ``reasoning_effort`` is spelled out here because it
+    nests inside a ``Reasoning`` object.
+    """
+    if not overrides:
+        return None
+    fields = dict(overrides)
+    effort = fields.pop("reasoning_effort", None)
+    settings = ModelSettings(**fields)
+    if effort:
+        settings = settings.resolve(ModelSettings(reasoning=Reasoning(effort=effort)))
+    return settings
 
-    def _codex_settings(self, model_settings: ModelSettings) -> ModelSettings:
-        overrides = ModelSettings(store=False, response_include=["reasoning.encrypted_content"])
-        effort = self._reasoning_effort
-        if effort and effort != "none":
-            # Clamp to efforts the backend accepts.
-            match effort:
-                case "minimal":
-                    effort = "low"
-                case "xhigh" | "max":
-                    effort = "high"
-                case _:
-                    pass
-            overrides = overrides.resolve(ModelSettings(reasoning=Reasoning(effort=effort)))
-        return model_settings.resolve(overrides)
 
-    async def _fetch_response(self, *args: Any, stream: bool = False, **kwargs: Any) -> Any:
-        if len(args) >= 3:  # model_settings is positional arg 2
-            args = (*args[:2], self._codex_settings(args[2]), *args[3:])
-        try:
-            events = await super()._fetch_response(*args, stream=True, **kwargs)  # type: ignore[call-overload]
-        except Exception as exc:
-            guardrail = self._as_guardrail(exc)
-            if guardrail is not None:
-                raise guardrail from exc
-            raise
-        guarded = self._guarded(events)
-        if stream:
-            return guarded
-        final_response = None
-        async for event in guarded:
-            if getattr(event, "type", None) == "response.completed":
-                final_response = event.response
-        if final_response is None:
-            msg = "ChatGPT backend stream ended without a completed response"
-            raise RuntimeError(msg)
-        return final_response
+class _SubscriptionGuardrailMixin:
+    """Translates a provider's content-guardrail refusal into a terminal error."""
 
-    def _as_guardrail(self, exc: BaseException) -> codex.CodexContentGuardrailError | None:
-        if isinstance(exc, codex.CodexContentGuardrailError):
+    model: str
+    _provider: SubscriptionProvider
+
+    def _as_guardrail(self, exc: BaseException) -> ContentGuardrailError | None:
+        if isinstance(exc, ContentGuardrailError):
             return exc
-        if codex.is_content_guardrail_error(exc):
-            return codex.CodexContentGuardrailError(self.model, exc)
+        if self._provider.is_guardrail_error(exc):
+            return ContentGuardrailError(self.model, self._provider.display_name, exc)
         return None
 
     async def _guarded(self, events: Any) -> AsyncIterator[Any]:
@@ -150,17 +126,136 @@ class _CodexResponsesModel(OpenAIResponsesModel):
 
     @staticmethod
     async def _aclose(events: Any) -> None:
-        aclose = getattr(events, "aclose", None)
-        if callable(aclose):
-            with contextlib.suppress(Exception):
-                await aclose()
-            return
-        close = getattr(events, "close", None)
-        if callable(close):
-            with contextlib.suppress(Exception):
-                result = close()
-                if inspect.isawaitable(result):
-                    await result
+        raise NotImplementedError
+
+
+class _SubscriptionResponsesModel(_SubscriptionGuardrailMixin, OpenAIResponsesModel):
+    """Responses model for a subscription backend (always streamed, stateless).
+
+    The ChatGPT backend has no non-streaming mode, so every request is streamed
+    and a non-streaming caller is served by draining the stream.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        openai_client: AsyncOpenAI,
+        *,
+        provider: SubscriptionProvider,
+        reasoning_effort: ReasoningEffort | None = None,
+    ) -> None:
+        super().__init__(model, openai_client)
+        self._provider = provider
+        self._overrides = _overrides_to_settings(provider.settings_overrides(reasoning_effort))
+
+    def _apply_overrides(self, model_settings: ModelSettings) -> ModelSettings:
+        if self._overrides is None:
+            return model_settings
+        return model_settings.resolve(self._overrides)
+
+    async def _fetch_response(self, *args: Any, stream: bool = False, **kwargs: Any) -> Any:
+        if len(args) >= 3:  # model_settings is positional arg 2
+            args = (*args[:2], self._apply_overrides(args[2]), *args[3:])
+        try:
+            events = await super()._fetch_response(*args, stream=True, **kwargs)  # type: ignore[call-overload]
+        except Exception as exc:
+            guardrail = self._as_guardrail(exc)
+            if guardrail is not None:
+                raise guardrail from exc
+            raise
+        guarded = self._guarded(events)
+        if stream:
+            return guarded
+        final_response = None
+        async for event in guarded:
+            if getattr(event, "type", None) == "response.completed":
+                final_response = event.response
+        if final_response is None:
+            msg = f"{self._provider.display_name} stream ended without a completed response"
+            raise RuntimeError(msg)
+        return final_response
+
+    @staticmethod
+    async def _aclose(events: Any) -> None:
+        await _aclose_stream(events)
+
+
+class _SubscriptionChatModel(_SubscriptionGuardrailMixin, OpenAIChatCompletionsModel):
+    """Chat-completions model for a subscription backend.
+
+    Used by providers whose OAuth endpoint fronts an OpenAI-compatible
+    ``/chat/completions`` API (Kimi Code, and xAI's Grok CLI proxy) rather than
+    the Responses API.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        openai_client: AsyncOpenAI,
+        *,
+        provider: SubscriptionProvider,
+        reasoning_effort: ReasoningEffort | None = None,
+    ) -> None:
+        super().__init__(model, openai_client)
+        self._provider = provider
+        self._overrides = _overrides_to_settings(provider.settings_overrides(reasoning_effort))
+
+    def _apply_overrides(self, model_settings: ModelSettings) -> ModelSettings:
+        if self._overrides is None:
+            return model_settings
+        return model_settings.resolve(self._overrides)
+
+    async def _fetch_response(self, *args: Any, **kwargs: Any) -> Any:
+        if len(args) >= 3:  # model_settings is positional arg 2
+            args = (*args[:2], self._apply_overrides(args[2]), *args[3:])
+        try:
+            return await super()._fetch_response(*args, **kwargs)
+        except Exception as exc:
+            guardrail = self._as_guardrail(exc)
+            if guardrail is not None:
+                raise guardrail from exc
+            raise
+
+    @staticmethod
+    async def _aclose(events: Any) -> None:
+        await _aclose_stream(events)
+
+
+async def _aclose_stream(events: Any) -> None:
+    aclose = getattr(events, "aclose", None)
+    if callable(aclose):
+        with contextlib.suppress(Exception):
+            await aclose()
+        return
+    close = getattr(events, "close", None)
+    if callable(close):
+        with contextlib.suppress(Exception):
+            result = close()
+            if inspect.isawaitable(result):
+                await result
+
+
+def build_subscription_model(
+    provider: SubscriptionProvider,
+    slug: str,
+    *,
+    reasoning_effort: ReasoningEffort | None = None,
+) -> Model:
+    """Build the SDK model for a subscription provider, per its wire protocol."""
+    client = provider.get_client()
+    target = provider.model_slug(slug)
+    match provider.wire:
+        case Wire.OPENAI_RESPONSES:
+            return _SubscriptionResponsesModel(
+                target, client, provider=provider, reasoning_effort=reasoning_effort
+            )
+        case Wire.OPENAI_CHAT:
+            return _SubscriptionChatModel(
+                target, client, provider=provider, reasoning_effort=reasoning_effort
+            )
+        case _:
+            # Adding a Wire member without a branch here is a typecheck error.
+            assert_never(provider.wire)
 
 
 class _NonStreamingModel(Model):
@@ -519,16 +614,15 @@ class StrixProvider(MultiProvider):
 
     def get_model(self, model_name: str | None) -> Model:
         llm = load_settings().llm
-        slug = codex.subscription_model(model_name)
+        resolved = subscription.resolve(model_name)
         idle_timeout = float(llm.stream_idle_timeout)
-        if slug:
-            # The ChatGPT subscription backend is always streamed; it has no
-            # non-streaming mode to fall back to, so LLM_DISABLE_STREAMING
-            # does not apply here.
-            model: Model = _CodexResponsesModel(
-                slug,
-                codex.get_subscription_client(),
-                reasoning_effort=llm.reasoning_effort,
+        if resolved is not None:
+            # A subscription backend is driven entirely by its provider, and the
+            # streamed-only ones have no non-streaming mode to fall back to, so
+            # LLM_DISABLE_STREAMING does not apply here.
+            provider, slug = resolved
+            model: Model = build_subscription_model(
+                provider, slug, reasoning_effort=llm.reasoning_effort
             )
         else:
             model = super().get_model(model_name)
@@ -621,7 +715,7 @@ def configure_sdk_model_defaults(settings: Settings) -> None:
     """Apply Strix config to SDK-native defaults."""
     llm = settings.llm
     set_tracing_disabled(True)
-    if codex.subscription_model(llm.model):
+    if subscription.resolve(llm.model):
         return
     _configure_litellm_compatibility()
     _configure_openrouter_attribution(llm.model)
@@ -804,7 +898,7 @@ def _configure_litellm_default(name: str, value: str) -> None:
 
 def uses_chat_completions_tool_schema(model_name: str, settings: Settings) -> bool:
     """Return whether the resolved SDK route can only receive JSON function tools."""
-    if codex.subscription_model(model_name):
+    if subscription.resolve(model_name):
         return False
     model = model_name.strip().lower()
     if "/" in model and not model.startswith("openai/"):
@@ -904,7 +998,7 @@ def routes_through_litellm(model_name: str | None) -> bool:
     OpenAI-compatible gateway in front of Claude.
     """
     name = (model_name or "").strip()
-    if not name or codex.subscription_model(name):
+    if not name or subscription.resolve(name):
         return False
     prefix, _, rest = name.partition("/")
     return bool(rest) and prefix.lower() not in {"openai", "any-llm"}
