@@ -3,7 +3,7 @@
 Lets Strix run inference on a consumer plan (ChatGPT Plus/Pro, Kimi membership)
 instead of a metered API key. A ``<prefix>/<model>`` ``STRIX_LLM`` -- e.g.
 ``chatgpt/gpt-5.4`` or ``kimi/kimi-k3`` -- selects the provider; sign-in is
-``strix auth login <provider>``.
+``strix-pentest auth login <provider>``.
 
 Public surface:
 

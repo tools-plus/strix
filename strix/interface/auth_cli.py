@@ -1,4 +1,4 @@
-"""``strix auth`` — model-subscription sign-in (login / status / logout).
+"""``strix-pentest auth`` — model-subscription sign-in (login / status / logout).
 
 Signing in only stores OAuth tokens (``~/.strix-pentest/subscription-auth.json``); model
 selection stays with ``STRIX_LLM``. A ``<provider>/<model>`` STRIX_LLM (e.g.
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 _CALLBACK_TIMEOUT_S = 300
 
-#: Provider assumed when ``strix auth login`` is run bare. ChatGPT was the only
+#: Provider assumed when ``strix-pentest auth login`` is run bare. ChatGPT was the only
 #: provider before the registry existed, so it stays the default.
 DEFAULT_PROVIDER = "chatgpt"
 
@@ -49,9 +49,9 @@ def _usage() -> str:
     providers = "|".join(subscription.provider_names())
     return (
         "Usage:\n"
-        f"  strix auth login [{providers}] [--manual]\n"
-        "  strix auth status\n"
-        f"  strix auth logout [{providers}]"
+        f"  strix-pentest auth login [{providers}] [--manual]\n"
+        "  strix-pentest auth status\n"
+        f"  strix-pentest auth logout [{providers}]"
     )
 
 
@@ -62,9 +62,9 @@ def _print_usage(console: Console) -> None:
 
 
 def run_auth(argv: list[str]) -> int:
-    """Entry point for ``strix auth …``. Returns a process exit code."""
+    """Entry point for ``strix-pentest auth …``. Returns a process exit code."""
     console = Console()
-    # Bare `strix auth` (no subcommand) defaults to login.
+    # Bare `strix-pentest auth` (no subcommand) defaults to login.
     subcommand = argv[0] if argv else "login"
     rest = argv[1:]
 
@@ -95,7 +95,7 @@ def _resolve_provider(console: Console, name: str) -> SubscriptionProvider | Non
 
 
 def _login(console: Console, argv: list[str]) -> int:
-    parser = argparse.ArgumentParser(prog="strix auth login", add_help=True)
+    parser = argparse.ArgumentParser(prog="strix-pentest auth login", add_help=True)
     parser.add_argument(
         "provider",
         nargs="?",
@@ -307,7 +307,8 @@ def _status(console: Console) -> int:
     if not signed_in:
         names = " | ".join(subscription.provider_names())
         console.print(
-            f"[yellow]Not signed in to any provider.[/] Run [cyan]strix auth login {names}[/]."
+            "[yellow]Not signed in to any provider.[/] Run "
+            f"[cyan]strix-pentest auth login {names}[/]."
         )
         return 1
 
@@ -330,7 +331,7 @@ def _status(console: Console) -> int:
         console.print(
             f"  [yellow]Note:[/] STRIX_LLM is [bold]{settings.llm.model}[/], but you're not "
             f"signed in to {active.display_name}. Run "
-            f"[cyan]strix auth login {active.cli_name}[/]."
+            f"[cyan]strix-pentest auth login {active.cli_name}[/]."
         )
     return 0
 
@@ -384,7 +385,7 @@ def _print_success(console: Console, provider: SubscriptionProvider) -> None:
     text.append(") — runs are billed to your plan.", style="white")
     text.append("\n\n", style="white")
     text.append("Run a scan as usual, e.g. ", style="white")
-    text.append("strix --target https://example.com", style="bold cyan")
+    text.append("strix-pentest --target https://example.com", style="bold cyan")
     console.print()
     console.print(
         Panel(

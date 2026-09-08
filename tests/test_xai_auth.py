@@ -260,7 +260,7 @@ def test_403_tier_gate_does_not_suggest_signing_in_again(grok: GrokProvider) -> 
 def test_401_still_suggests_signing_in_again(grok: GrokProvider) -> None:
     hint = grok.error_hint("error code: 401 unauthorized")
     assert hint is not None
-    assert "strix auth login grok" in hint
+    assert "strix-pentest auth login grok" in hint
 
 
 def test_unrelated_errors_get_no_hint(grok: GrokProvider) -> None:

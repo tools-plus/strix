@@ -1,4 +1,4 @@
-"""Tests for the `strix auth` CLI: subcommand routing, provider resolution,
+"""Tests for the `strix-pentest auth` CLI: subcommand routing, provider resolution,
 and the two sign-in flow drivers."""
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ def _codex() -> Any:
 
 def test_default_provider_is_chatgpt() -> None:
     # ChatGPT was the only provider before the registry, so a bare
-    # `strix auth login` must keep signing in to it.
+    # `strix-pentest auth login` must keep signing in to it.
     assert auth_cli.DEFAULT_PROVIDER == "chatgpt"
     assert subscription.get_provider(auth_cli.DEFAULT_PROVIDER) is not None
 

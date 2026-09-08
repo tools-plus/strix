@@ -59,51 +59,51 @@ def parse_arguments() -> argparse.Namespace:
         epilog="""
 Examples:
   # Web application penetration test
-  strix --target https://example.com
+  strix-pentest --target https://example.com
 
   # GitHub repository analysis
-  strix --target https://github.com/user/repo
-  strix --target git@github.com:user/repo.git
+  strix-pentest --target https://github.com/user/repo
+  strix-pentest --target git@github.com:user/repo.git
 
   # Local code analysis
-  strix --target ./my-project
+  strix-pentest --target ./my-project
 
   # API spec test (OpenAPI/Swagger file or Postman collection export)
-  strix --target ./openapi.yaml --target https://api.example.com
-  strix --target ./collection.postman_collection.json
+  strix-pentest --target ./openapi.yaml --target https://api.example.com
+  strix-pentest --target ./collection.postman_collection.json
 
   # Postman collection pulled live by id (needs POSTMAN_API_KEY); optional environment
-  strix --target postman://<collection-uuid> --target https://api.example.com
-  strix --target "postman://<collection-uuid>?env=<environment-uuid>"
+  strix-pentest --target postman://<collection-uuid> --target https://api.example.com
+  strix-pentest --target "postman://<collection-uuid>?env=<environment-uuid>"
 
   # Domain penetration test
-  strix --target example.com
+  strix-pentest --target example.com
 
   # IP address penetration test
-  strix --target 192.168.1.42
+  strix-pentest --target 192.168.1.42
 
   # Multiple targets (e.g., white-box testing with source and deployed app)
-  strix --target https://github.com/user/repo --target https://example.com
-  strix --target ./my-project --target https://staging.example.com --target https://prod.example.com
+  strix-pentest --target https://github.com/user/repo --target https://example.com
+  strix-pentest --target ./my-project --target https://staging.example.com --target https://prod.example.com
 
   # Targets from a file, one target per non-empty, non-comment line
-  strix --target-list ./targets.txt
+  strix-pentest --target-list ./targets.txt
 
   # Custom instructions (inline)
-  strix --target example.com --instruction "Focus on authentication vulnerabilities"
+  strix-pentest --target example.com --instruction "Focus on authentication vulnerabilities"
 
   # Custom instructions (from file)
-  strix --target example.com --instruction-file ./instructions.txt
-  strix --target https://app.com --instruction-file /path/to/detailed_instructions.md
+  strix-pentest --target example.com --instruction-file ./instructions.txt
+  strix-pentest --target https://app.com --instruction-file /path/to/detailed_instructions.md
 
   # Extra files placed in the sandbox workspace
-  strix --target ./my-project --workspace-file ./wordlist.txt
-  strix --target https://app.com --workspace-file ./openapi.yaml:specs/openapi.yaml
+  strix-pentest --target ./my-project --workspace-file ./wordlist.txt
+  strix-pentest --target https://app.com --workspace-file ./openapi.yaml:specs/openapi.yaml
 
 Strix Cloud:
-  strix cloud login
-  strix cloud scans start --source . --yes --wait
-  strix cloud                      # list every cloud resource
+  strix-pentest cloud login
+  strix-pentest cloud scans start --source . --yes --wait
+  strix-pentest cloud                      # list every cloud resource
 
   Run a pentest in Strix Cloud     https://app.strix.ai
   Try Strix Enterprise             https://strix.ai/demo

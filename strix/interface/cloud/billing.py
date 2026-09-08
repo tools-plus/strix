@@ -1,4 +1,4 @@
-"""Billing top-up and agent-wallet execution for ``strix cloud``."""
+"""Billing top-up and agent-wallet execution for ``strix-pentest cloud``."""
 
 from __future__ import annotations
 
@@ -186,7 +186,8 @@ def run_topup(  # noqa: PLR0911, PLR0912, PLR0915
             {
                 "error": (
                     "Payment was interrupted after the wallet started. The outcome is unknown; "
-                    "run `strix cloud billing credits` and check the balance before retrying."
+                    "run `strix-pentest cloud billing credits` and check the balance "
+                    "before retrying."
                 ),
                 "interrupted": True,
                 "payment_outcome_unknown": True,
@@ -216,7 +217,7 @@ def run_topup(  # noqa: PLR0911, PLR0912, PLR0915
     if not as_json:
         console.print(
             "[yellow]The wallet exited without a confirmed receipt. The payment outcome is "
-            "unknown; run `strix cloud billing credits` before retrying.[/]"
+            "unknown; run `strix-pentest cloud billing credits` before retrying.[/]"
         )
         detail = _wallet_detail(stderr or stdout or "")
         if detail:
@@ -272,7 +273,7 @@ def run_topup(  # noqa: PLR0911, PLR0912, PLR0915
         {
             "error": (
                 "The wallet exited without a confirmed receipt. The payment outcome is unknown; "
-                "run `strix cloud billing credits` and check the balance before retrying."
+                "run `strix-pentest cloud billing credits` and check the balance before retrying."
             ),
             "detail": _wallet_detail(
                 stderr or stdout or f"Wallet client exited with status {result.returncode}."
@@ -624,10 +625,10 @@ def _prepare_link_wallet(console: Console, npx: str, *, as_json: bool) -> str | 
         return None
 
     manual_setup = (
-        "Payment needs a Stripe Link wallet. Run `strix cloud billing topup` in an "
+        "Payment needs a Stripe Link wallet. Run `strix-pentest cloud billing topup` in an "
         "interactive terminal to connect one, or set up the wallet at "
         "https://link.com/agents. For a browser checkout instead, run "
-        "`strix cloud billing subscribe --plan strix_top_up`."
+        "`strix-pentest cloud billing subscribe --plan strix_top_up`."
     )
     if as_json or not (sys.stdin.isatty() and sys.stdout.isatty()):
         return manual_setup

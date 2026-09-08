@@ -33,11 +33,11 @@ def run_completions(argv: list[str]) -> int:
         return 0
     if not argv or argv[0] in ("-h", "--help", "help"):
         sys.stdout.write(
-            "Usage: strix completions <zsh|bash|fish>\n\n"
+            "Usage: strix-pentest completions <zsh|bash|fish>\n\n"
             "Enable tab completion for the current shell:\n"
-            "  zsh:  source <(strix completions zsh)\n"
-            "  bash: source <(strix completions bash)\n"
-            "  fish: strix completions fish | source\n"
+            "  zsh:  source <(strix-pentest completions zsh)\n"
+            "  bash: source <(strix-pentest completions bash)\n"
+            "  fish: strix-pentest completions fish | source\n"
         )
         return 0
     shell = argv[0].lower()
@@ -53,7 +53,7 @@ def run_completions(argv: list[str]) -> int:
 
 
 def completion_candidates(words: list[str]) -> list[str]:
-    """Return candidates for words after the ``strix`` executable."""
+    """Return candidates for words after the ``strix-pentest`` executable."""
     prior, current = _split_cursor(words)
     if not prior:
         candidates = _matching(_ROOT_COMMANDS, current)
@@ -332,23 +332,23 @@ def _matching(candidates: Any, prefix: str) -> list[str]:
 
 
 def _zsh_script() -> str:
-    return r"""#compdef strix
-_strix() {
+    return r"""#compdef strix-pentest
+_strix_pentest() {
   local -a candidates
   candidates=("${(@f)$($words[1] completions --candidates "${words[@]:2}")}")
-  _describe 'strix' candidates
+  _describe 'strix-pentest' candidates
 }
-compdef _strix strix
+compdef _strix_pentest strix-pentest
 """
 
 
 def _bash_script() -> str:
-    return r"""_strix_completion() {
+    return r"""_strix_pentest_completion() {
   local -a candidates
   local candidate
   while IFS= read -r candidate; do
     candidates+=("$candidate")
-  done < <(strix completions --candidates "${COMP_WORDS[@]:1:$COMP_CWORD}")
+  done < <(strix-pentest completions --candidates "${COMP_WORDS[@]:1:$COMP_CWORD}")
   COMPREPLY=("${candidates[@]}")
   for candidate in "${COMPREPLY[@]}"; do
     if [[ $candidate == */ ]]; then
@@ -359,15 +359,15 @@ def _bash_script() -> str:
     fi
   done
 }
-complete -F _strix_completion strix
+complete -F _strix_pentest_completion strix-pentest
 """
 
 
 def _fish_script() -> str:
-    return r"""function __strix_candidates
+    return r"""function __strix_pentest_candidates
   set -l words (commandline -opc)
   set -e words[1]
-  command strix completions --candidates $words (commandline -ct)
+  command strix-pentest completions --candidates $words (commandline -ct)
 end
-complete -c strix -f -a '(__strix_candidates)'
+complete -c strix-pentest -f -a '(__strix_pentest_candidates)'
 """

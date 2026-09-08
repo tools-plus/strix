@@ -46,7 +46,7 @@ def validate_environment() -> None:
             console.print(
                 f"[red]STRIX_LLM={settings.llm.model} uses your {provider.display_name} "
                 "subscription, but you're not signed in.[/] Run "
-                f"[cyan]strix auth login {provider.cli_name}[/] first."
+                f"[cyan]strix-pentest auth login {provider.cli_name}[/] first."
             )
             report_error("subscription_not_signed_in")
             sys.exit(1)

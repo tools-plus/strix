@@ -3,7 +3,7 @@
 Follows the pattern used by tools like gh, uv, and pip: a background,
 rate-limited (once per 24h) check against the release source, a cached
 result in ``~/.strix``, a non-intrusive notice with the upgrade command
-for the detected install method, and a ``strix --update`` self-update
+for the detected install method, and a ``strix-pentest --update`` self-update
 path for the standalone binary install.
 """
 

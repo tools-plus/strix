@@ -195,7 +195,7 @@ def test_provider_prefixes_are_unique() -> None:
 
 
 def test_provider_lookup_keys_do_not_collide_across_providers() -> None:
-    # A key claimed by two providers would make `strix auth login <key>` ambiguous.
+    # A key claimed by two providers would make `strix-pentest auth login <key>` ambiguous.
     # Keys repeated *within* one provider (name == cli_name) are fine.
     seen: set[str] = set()
     for provider in subscription.all_providers():
@@ -489,7 +489,7 @@ def test_get_valid_record_raises_when_not_signed_in(codex: CodexProvider) -> Non
     with pytest.raises(subscription.SubscriptionAuthError) as exc:
         codex.get_valid_record()
     assert exc.value.code == "not_authenticated"
-    assert "strix auth login chatgpt" in str(exc.value)
+    assert "strix-pentest auth login chatgpt" in str(exc.value)
 
 
 def test_unsupported_flow_hooks_raise(codex: CodexProvider) -> None:

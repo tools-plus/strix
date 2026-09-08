@@ -467,7 +467,7 @@ def test_redirected_session_argument_errors_are_json_only(command: str, capsys: 
     assert cloud.run_cloud([command, "--bogus"]) == http.EXIT_USAGE
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
-    assert f"strix cloud {command}" in payload["error"]
+    assert f"strix-pentest cloud {command}" in payload["error"]
     assert captured.err == ""
 
 
@@ -776,7 +776,7 @@ def test_session_help_is_specific_and_human_whoami_shows_scopes(
     monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
     assert cloud.run_cloud(["whoami", "--help"]) == 0
     who_help = capsys.readouterr().out
-    assert "strix cloud whoami" in who_help
+    assert "strix-pentest cloud whoami" in who_help
     assert "--no-browser" not in who_help
     assert cloud.run_cloud(["whoami", "--show-scopes"]) == 0
     assert "scans:read organizations:read" in capsys.readouterr().out
@@ -953,7 +953,7 @@ def test_device_flow_accepts_external_authkit_url_and_binds_token_origin(
 def test_missing_verb_json_is_structured(capsys: Any) -> None:
     assert cloud.run_cloud(["uploads", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
-    assert payload["command"] == "strix cloud uploads"
+    assert payload["command"] == "strix-pentest cloud uploads"
     assert any(item["name"] == "request" for item in payload["verbs"])
 
 
@@ -976,11 +976,11 @@ def test_root_help_accepts_json_before_help_and_leaf_help_stays_specific(
     capsys: Any,
 ) -> None:
     assert cloud.run_cloud(["--json", "--help"]) == 0
-    assert json.loads(capsys.readouterr().out)["command"] == "strix cloud"
+    assert json.loads(capsys.readouterr().out)["command"] == "strix-pentest cloud"
 
     assert cloud.run_cloud(["scans", "get", "scan-1", "-h"]) == 0
     leaf_help = capsys.readouterr().out
-    assert "strix cloud scans get" in leaf_help
+    assert "strix-pentest cloud scans get" in leaf_help
     assert "scans verbs" not in leaf_help
 
 
@@ -990,17 +990,17 @@ def test_non_tty_dispatcher_always_emits_structured_json(
     monkeypatch.setattr(sys.stdout, "isatty", lambda: False)
 
     assert cloud.run_cloud([]) == 0
-    assert json.loads(capsys.readouterr().out)["command"] == "strix cloud"
+    assert json.loads(capsys.readouterr().out)["command"] == "strix-pentest cloud"
 
     assert cloud.run_cloud(["uploads"]) == 0
-    assert json.loads(capsys.readouterr().out)["command"] == "strix cloud uploads"
+    assert json.loads(capsys.readouterr().out)["command"] == "strix-pentest cloud uploads"
 
     assert cloud.run_cloud(["does-not-exist"]) == http.EXIT_USAGE
     assert json.loads(capsys.readouterr().out) == {"error": "unknown command: does-not-exist"}
 
     assert cloud.run_cloud(["scans", "does-not-exist"]) == http.EXIT_USAGE
     payload = json.loads(capsys.readouterr().out)
-    assert payload["command"] == "strix cloud scans"
+    assert payload["command"] == "strix-pentest cloud scans"
     assert payload["error"] == "unknown verb"
 
 
@@ -1118,5 +1118,5 @@ def test_root_help_advertises_cloud_and_completions(
         interface_main()
     assert raised.value.code == 0
     output = capsys.readouterr().out
-    assert "strix cloud" in output
-    assert "strix completions" in output
+    assert "strix-pentest cloud" in output
+    assert "strix-pentest completions" in output

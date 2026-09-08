@@ -89,7 +89,7 @@ export STRIX_LLM="openrouter/z-ai/glm-5.3"
 export LLM_API_KEY="your-api-key"
 
 # Run your first security assessment
-strix --target ./app-directory
+strix-pentest --target ./app-directory
 ```
 
 > [!NOTE]
@@ -182,16 +182,16 @@ Every scan writes its results to disk as it runs. Bring them up in a local dashb
 
 ```bash
 # Open the most recent run
-strix view
+strix-pentest view
 
 # ...or open a specific run by name
-strix view my-run-name
+strix-pentest view my-run-name
 
 # Expose the viewer on all IPv4 interfaces at a fixed port
-strix view --host 0.0.0.0 --port 8080 --no-open
+strix-pentest view --host 0.0.0.0 --port 8080 --no-open
 ```
 
-The dashboard shows the findings, a live map of the agent team, and past runs. Nothing leaves your machine, and the UI ships prebuilt. `strix view` binds to `127.0.0.1` and prints a tokened link that grants access to the run, so share it carefully.
+The dashboard shows the findings, a live map of the agent team, and past runs. Nothing leaves your machine, and the UI ships prebuilt. `strix-pentest view` binds to `127.0.0.1` and prints a tokened link that grants access to the run, so share it carefully.
 
 See the [viewer documentation](https://docs.strix.ai/usage/viewer) for the options and for reaching the viewer from another machine.
 
@@ -203,13 +203,13 @@ See the [viewer documentation](https://docs.strix.ai/usage/viewer) for the optio
 
 ```bash
 # Scan a local codebase
-strix --target ./app-directory
+strix-pentest --target ./app-directory
 
 # Security review of a GitHub repository
-strix --target https://github.com/org/repo
+strix-pentest --target https://github.com/org/repo
 
 # Black-box web application assessment
-strix --target https://your-app.com
+strix-pentest --target https://your-app.com
 ```
 
 ### API Testing (OpenAPI / Swagger / Postman)
@@ -220,8 +220,8 @@ agent knows where to send traffic:
 
 ```bash
 # OpenAPI / Swagger file, Postman export, or a live collection by id
-strix --target ./openapi.yaml --target https://api.your-app.com
-strix --target postman://<collection-uuid> --target https://api.your-app.com
+strix-pentest --target ./openapi.yaml --target https://api.your-app.com
+strix-pentest --target postman://<collection-uuid> --target https://api.your-app.com
 ```
 
 
@@ -229,13 +229,13 @@ strix --target postman://<collection-uuid> --target https://api.your-app.com
 
 ```bash
 # Grey-box authenticated testing
-strix --target https://your-app.com --instruction "Perform authenticated testing using credentials: user:pass"
+strix-pentest --target https://your-app.com --instruction "Perform authenticated testing using credentials: user:pass"
 
 # Multi-target testing (source code + deployed app)
 strix -t https://github.com/org/app -t https://your-app.com
 
 # Targets from a file, one target per non-empty, non-comment line
-strix --target-list ./targets.txt
+strix-pentest --target-list ./targets.txt
 ```
 
 See the [CLI reference](https://docs.strix.ai/usage/cli) for every option, including scan modes, diff scope, instruction files, and budgets.
@@ -301,17 +301,17 @@ export LLM_API_BASE="your-api-base-url"  # if using a local model, e.g. Ollama, 
 Instead of a metered API key, you can run Strix on a consumer plan you already pay for:
 
 ```bash
-strix auth login chatgpt             # ChatGPT Plus/Pro — browser sign-in
+strix-pentest auth login chatgpt             # ChatGPT Plus/Pro — browser sign-in
 export STRIX_LLM="chatgpt/gpt-5.4"   # chatgpt/<model> runs on the subscription
 
-strix auth login kimi                # Kimi membership — device code, works over SSH
+strix-pentest auth login kimi                # Kimi membership — device code, works over SSH
 export STRIX_LLM="kimi/kimi-k3"      # kimi/<model> runs on the subscription
 
-strix auth login grok                # SuperGrok / X Premium — device code
+strix-pentest auth login grok                # SuperGrok / X Premium — device code
 export STRIX_LLM="grok/grok-4.6"     # grok/<model> runs on the subscription
 
-strix auth status                    # show every active sign-in
-strix auth logout [provider]         # forget one provider, or all of them
+strix-pentest auth status                    # show every active sign-in
+strix-pentest auth logout [provider]         # forget one provider, or all of them
 ```
 
 Tokens are stored per provider in `~/.strix-pentest/subscription-auth.json` (mode `0600`), separate from
@@ -327,22 +327,22 @@ Each prefix selects the subscription; the vendor's metered route keeps its usual
 > to Claude Code and Claude.ai, so Claude runs on an API key (`anthropic/<model>`) instead.
 
 > [!WARNING]
-> xAI allowlists its OAuth API surface separately from the in-app subscription, so `strix auth
+> xAI allowlists its OAuth API surface separately from the in-app subscription, so `strix-pentest auth
 > login grok` can succeed while inference returns HTTP 403. Re-signing in does not clear that —
 > use an API key (`LLM_API_KEY` with `STRIX_LLM=xai/grok-4.6`) or check your plan.
 
-#### Use the managed platform: `strix cloud`
+#### Use the managed platform: `strix-pentest cloud`
 
 Run scans on [app.strix.ai](https://app.strix.ai) from the terminal, without Docker or an LLM key:
 
 ```bash
-strix cloud login                                  # browser sign-in, one credential per install
-strix cloud scans start --source . --yes --wait    # scan local code, approving the upload
-strix cloud scans start --engagement-type live_test --domain-ids <uuid> --wait
-strix cloud vulns list --severity critical
+strix-pentest cloud login                                  # browser sign-in, one credential per install
+strix-pentest cloud scans start --source . --yes --wait    # scan local code, approving the upload
+strix-pentest cloud scans start --engagement-type live_test --domain-ids <uuid> --wait
+strix-pentest cloud vulns list --severity critical
 ```
 
-Every [REST API](https://docs.app.strix.ai) operation has a matching `strix cloud <resource> <verb>` command. Run `strix cloud` to list the resources, and add `help` to a resource to list its verbs. Output is JSON when stdout is not a terminal or when you pass `--json`. Binary downloads are the exception: redirect the raw bytes, or combine `--output FILE --json` for download metadata.
+Every [REST API](https://docs.app.strix.ai) operation has a matching `strix-pentest cloud <resource> <verb>` command. Run `strix-pentest cloud` to list the resources, and add `help` to a resource to list its verbs. Output is JSON when stdout is not a terminal or when you pass `--json`. Binary downloads are the exception: redirect the raw bytes, or combine `--output FILE --json` for download metadata.
 
 See the [cloud CLI documentation](https://docs.strix.ai/cloud/cli) for scopes, workspaces, billing, and source-upload options.
 

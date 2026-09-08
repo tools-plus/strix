@@ -88,7 +88,7 @@ class SubscriptionProvider(ABC):
     # --- identity -------------------------------------------------------
     #: Internal id; the key under which tokens are stored.
     name: str
-    #: What the user types: ``strix auth login <cli_name>``.
+    #: What the user types: ``strix-pentest auth login <cli_name>``.
     cli_name: str
     #: Additional accepted spellings of ``cli_name``.
     aliases: tuple[str, ...] = ()
@@ -149,7 +149,7 @@ class SubscriptionProvider(ABC):
         if record is None:
             raise SubscriptionAuthError(
                 "not_authenticated",
-                f"not signed in; run: strix auth login {self.cli_name}",
+                f"not signed in; run: strix-pentest auth login {self.cli_name}",
             )
         if not self._near_expiry(record):
             return record
@@ -158,7 +158,7 @@ class SubscriptionProvider(ABC):
             if record is None:
                 raise SubscriptionAuthError(
                     "not_authenticated",
-                    f"not signed in; run: strix auth login {self.cli_name}",
+                    f"not signed in; run: strix-pentest auth login {self.cli_name}",
                 )
             if not self._near_expiry(record):
                 return record
@@ -303,7 +303,7 @@ class SubscriptionProvider(ABC):
         ):
             return (
                 f"Your {self.display_name} sign-in has expired or was revoked. Sign in again:\n"
-                f"  strix auth login {self.cli_name}"
+                f"  strix-pentest auth login {self.cli_name}"
             )
         return None
 

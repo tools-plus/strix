@@ -1,4 +1,4 @@
-"""Tests for the Stripe Link wallet setup path of `strix cloud billing topup`."""
+"""Tests for the Stripe Link wallet setup path of `strix-pentest cloud billing topup`."""
 
 from __future__ import annotations
 

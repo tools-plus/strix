@@ -1,4 +1,4 @@
-"""Tests for the `strix cloud` CLI: routing, request building, and output."""
+"""Tests for the `strix-pentest cloud` CLI: routing, request building, and output."""
 
 from __future__ import annotations
 
@@ -551,9 +551,9 @@ def test_insufficient_credits_always_prints_topup_instruction(
     output = " ".join(capsys.readouterr().out.split())
     assert "Error: Out of credits." in output
     assert "Next step:" in output
-    assert "strix cloud billing topup --credits <count>" in output
+    assert "strix-pentest cloud billing topup --credits <count>" in output
     assert "https://app.strix.ai/settings/billing" in output
-    assert "strix cloud billing credits" in output
+    assert "strix-pentest cloud billing credits" in output
 
 
 def test_insufficient_credits_shows_platform_hint_once(
@@ -593,7 +593,7 @@ def test_payment_required_without_body_names_the_topup_command(
     assert cloud.run_cloud(argv) == http.EXIT_PAYMENT
     result = json.loads(capsys.readouterr().out)
     assert result["error"] == "Not enough credits to run this command."
-    assert "strix cloud billing topup --credits <count>" in result["next_step"]
+    assert "strix-pentest cloud billing topup --credits <count>" in result["next_step"]
     assert "https://app.strix.ai/settings/billing" in result["next_step"]
 
 
@@ -1483,7 +1483,7 @@ def test_every_command_builds_a_parser() -> None:
     for group, commands in SPEC.items():
         for verb, cmd in commands.items():
             parser = runner._build_parser(group, verb, cmd)
-            assert parser.prog == f"strix cloud {group} {verb}"
+            assert parser.prog == f"strix-pentest cloud {group} {verb}"
 
 
 def test_app_url_and_timeout_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -3266,8 +3266,10 @@ def test_trace_human_view_summarizes_events_and_preserves_selector(
         "sk_live_secret-as-dictionary-key",
     ):
         assert secret not in output
-    assert "scans trace-event scan-id EVENT_ID" in output
     normalized_output = " ".join(output.replace("`", "").split())
+    # Normalized like the assertions below: the hint is console-wrapped, so the
+    # command can straddle a line break depending on the program name's length.
+    assert "scans trace-event scan-id EVENT_ID" in normalized_output
     assert "same trace command with --cursor next-secret" in normalized_output
     assert "keep its --agent-id, --tool-name, and --limit options" in normalized_output
     assert "Older trace events remain available." in normalized_output
@@ -3625,7 +3627,7 @@ def test_logout_help_does_not_remove_stored_auth(
 
     assert cloud.run_cloud(["logout", "--help"]) == 0
     assert platform_cli.read_record() == {"api_token": "keep-me"}
-    assert "usage: strix cloud logout" in capsys.readouterr().out
+    assert "usage: strix-pentest cloud logout" in capsys.readouterr().out
 
 
 def test_logout_rejects_unknown_arguments_without_removing_stored_auth(
