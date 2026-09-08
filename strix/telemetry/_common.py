@@ -7,7 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any, cast
 from uuid import uuid4
 
-from strix.core.branding import config_path
+from strix.core.branding import DIST_NAME, config_path
 
 
 logger = logging.getLogger(__name__)
@@ -25,9 +25,9 @@ _FIRST_RUN_CACHED: bool | None = None
 
 def get_version() -> str:
     try:
-        return version("strix-agent")
+        return version(DIST_NAME)
     except PackageNotFoundError:
-        logger.debug("strix-agent version lookup failed", exc_info=True)
+        logger.debug("%s version lookup failed", DIST_NAME, exc_info=True)
         return "unknown"
 
 

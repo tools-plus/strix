@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-APP=strix
-REPO="usestrix/strix"
-STRIX_IMAGE="ghcr.io/usestrix/strix-sandbox:1.3.0"
+APP=strix-pentest
+REPO="tools-plus/strix-pentest"
+STRIX_IMAGE="ghcr.io/tools-plus/strix-sandbox:1.3.0"
 
 MUTED='\033[0;2m'
 RED='\033[0;31m'
@@ -70,7 +70,7 @@ if [ "$os" = "windows" ]; then
     fi
 fi
 
-INSTALL_DIR=$HOME/.strix/bin
+INSTALL_DIR=$HOME/.strix-pentest/bin
 mkdir -p "$INSTALL_DIR"
 
 if [ -z "$requested_version" ]; then
@@ -103,21 +103,21 @@ check_existing_installation() {
     local found_paths=()
     while IFS= read -r -d '' path; do
         found_paths+=("$path")
-    done < <(which -a strix 2>/dev/null | tr '\n' '\0' || true)
+    done < <(which -a "$APP" 2>/dev/null | tr '\n' '\0' || true)
 
     if [ ${#found_paths[@]} -gt 0 ]; then
         for path in "${found_paths[@]}"; do
-            if [[ ! -e "$path" ]] || [[ "$path" == "$INSTALL_DIR/strix"* ]]; then
+            if [[ ! -e "$path" ]] || [[ "$path" == "$INSTALL_DIR/$APP"* ]]; then
                 continue
             fi
 
             if [[ -n "$path" ]]; then
-                echo -e "${MUTED}Found existing strix at: ${NC}$path"
+                echo -e "${MUTED}Found existing $APP at: ${NC}$path"
 
                 if [[ "$path" == *".local/bin"* ]]; then
                     echo -e "${MUTED}Removing old pipx installation...${NC}"
                     if command -v pipx >/dev/null 2>&1; then
-                        pipx uninstall strix-agent 2>/dev/null || true
+                        pipx uninstall strix-pentest 2>/dev/null || true
                     fi
                     rm -f "$path" 2>/dev/null || true
                 elif [[ -L "$path" || -f "$path" ]]; then
@@ -132,8 +132,8 @@ check_existing_installation() {
 check_version() {
     check_existing_installation
 
-    if [[ -x "$INSTALL_DIR/strix" ]]; then
-        installed_version=$("$INSTALL_DIR/strix" --version 2>/dev/null | awk '{print $2}' || echo "")
+    if [[ -x "$INSTALL_DIR/$APP" ]]; then
+        installed_version=$("$INSTALL_DIR/$APP" --version 2>/dev/null | awk '{print $2}' || echo "")
         if [[ "$installed_version" == "$specific_version" ]]; then
             print_message info "${GREEN}✓ Strix ${NC}$specific_version${GREEN} already installed${NC}"
             SKIP_DOWNLOAD=true
@@ -161,11 +161,11 @@ download_and_install() {
     echo -e "${MUTED}Extracting...${NC}"
     if [ "$os" = "windows" ]; then
         unzip -q "$filename"
-        mv "strix-${specific_version}-${target}.exe" "$INSTALL_DIR/strix.exe"
+        mv "$APP-${specific_version}-${target}.exe" "$INSTALL_DIR/$APP.exe"
     else
         tar -xzf "$filename"
-        mv "strix-${specific_version}-${target}" "$INSTALL_DIR/strix"
-        chmod 755 "$INSTALL_DIR/strix"
+        mv "$APP-${specific_version}-${target}" "$INSTALL_DIR/$APP"
+        chmod 755 "$INSTALL_DIR/$APP"
     fi
 
     cd - > /dev/null
@@ -213,9 +213,9 @@ add_to_path() {
     if grep -Fxq "$command" "$config_file" 2>/dev/null; then
         print_message info "${MUTED}PATH already configured in ${NC}$config_file"
     elif [[ -w $config_file ]]; then
-        echo -e "\n# strix" >> "$config_file"
+        echo -e "\n# $APP" >> "$config_file"
         echo "$command" >> "$config_file"
-        print_message info "${MUTED}Successfully added ${NC}strix ${MUTED}to \$PATH in ${NC}$config_file"
+        print_message info "${MUTED}Successfully added ${NC}$APP ${MUTED}to \$PATH in ${NC}$config_file"
     else
         print_message warning "Manually add the directory to $config_file (or similar):"
         print_message info "  $command"
@@ -292,11 +292,11 @@ setup_path() {
 verify_installation() {
     export PATH="$INSTALL_DIR:$PATH"
 
-    local which_strix=$(which strix 2>/dev/null || echo "")
+    local which_strix=$(which "$APP" 2>/dev/null || echo "")
 
-    if [[ "$which_strix" != "$INSTALL_DIR/strix" && "$which_strix" != "$INSTALL_DIR/strix.exe" ]]; then
+    if [[ "$which_strix" != "$INSTALL_DIR/$APP" && "$which_strix" != "$INSTALL_DIR/$APP.exe" ]]; then
         if [[ -n "$which_strix" ]]; then
-            echo -e "${YELLOW}⚠ Found conflicting strix at: ${NC}$which_strix"
+            echo -e "${YELLOW}⚠ Found conflicting $APP at: ${NC}$which_strix"
             echo -e "${MUTED}Attempting to remove...${NC}"
 
             if rm -f "$which_strix" 2>/dev/null; then
@@ -308,8 +308,8 @@ verify_installation() {
         fi
     fi
 
-    if [[ -x "$INSTALL_DIR/strix" ]]; then
-        local version=$("$INSTALL_DIR/strix" --version 2>/dev/null | awk '{print $2}' || echo "unknown")
+    if [[ -x "$INSTALL_DIR/$APP" ]]; then
+        local version=$("$INSTALL_DIR/$APP" --version 2>/dev/null | awk '{print $2}' || echo "unknown")
         echo -e "${GREEN}✓ Strix ${NC}$version${GREEN} ready${NC}"
     fi
 }
@@ -340,7 +340,7 @@ echo -e "     ${MUTED}export LLM_API_KEY='your-api-key'${NC}"
 echo -e "     ${MUTED}export STRIX_LLM='openai/gpt-5.4'${NC}"
 echo ""
 echo -e "  ${CYAN}2.${NC} Run a penetration test:"
-echo -e "     ${MUTED}strix --target https://example.com${NC}"
+echo -e "     ${MUTED}$APP --target https://example.com${NC}"
 echo ""
 echo -e "${MUTED}For more information visit ${NC}https://strix.ai"
 echo -e "${MUTED}Supported models ${NC}https://docs.strix.ai/llm-providers/overview"

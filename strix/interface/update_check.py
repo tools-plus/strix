@@ -30,14 +30,14 @@ import requests
 from rich.console import Console
 from rich.prompt import Prompt
 
-from strix.core.branding import config_path
+from strix.core.branding import PROGRAM_NAME, config_path
 from strix.telemetry._common import get_version
 
 
 logger = logging.getLogger(__name__)
 
-GITHUB_REPO = "usestrix/strix"
-PYPI_PACKAGE = "strix-agent"
+GITHUB_REPO = "tools-plus/strix-pentest"
+RELEASES_URL = f"https://github.com/{GITHUB_REPO}/releases/latest"
 CHECK_INTERVAL_SECONDS = 24 * 60 * 60
 REQUEST_TIMEOUT_SECONDS = 5
 
@@ -70,19 +70,34 @@ def get_install_method() -> str:
 
 def get_upgrade_command(method: str | None = None) -> str:
     method = method or get_install_method()
-    commands = {
-        "binary": "strix --update",
-        "pipx": "pipx upgrade strix-agent",
-        "uv": "uv tool upgrade strix-agent",
-        "pip": "pip install --upgrade strix-agent",
-    }
-    return commands[method]
+    if method == "binary":
+        return f"{PROGRAM_NAME} --update"
+    # The fork is not on a package index, so there is no `pipx upgrade` to run:
+    # a wheel install is refreshed from the release it came from.
+    return f"see {RELEASES_URL}"
 
 
-def _parse_version(value: str) -> tuple[int, ...] | None:
-    parts = value.strip().lstrip("v").split(".")
+def _parse_version(value: str) -> tuple[tuple[int, ...], int] | None:
+    """Return ``(release, fork_date)`` for a release tag or installed version.
+
+    Fork releases are tagged ``1.6.2-TP-20260908`` and their wheels carry the
+    PEP 440 equivalent ``1.6.2+tp.20260908``. Both spellings must compare equal,
+    and an upstream-shaped ``1.6.2`` must sort before either, so the numeric
+    release and the fork date are read out separately. Returns None for
+    anything that is not a version, which keeps the check silent rather than
+    guessing.
+    """
+    text = value.strip().lstrip("v")
+    for separator in ("+", "-"):
+        base, found, qualifier = text.partition(separator)
+        if found:
+            digits = "".join(ch for ch in qualifier if ch.isdigit())
+            try:
+                return tuple(int(part) for part in base.split(".")), int(digits or 0)
+            except ValueError:
+                return None
     try:
-        return tuple(int(part) for part in parts)
+        return tuple(int(part) for part in text.split(".")), 0
     except ValueError:
         return None
 
@@ -97,21 +112,13 @@ def _is_newer(latest: str, current: str) -> bool:
 
 def _fetch_latest_version() -> str | None:
     try:
-        if is_binary_install():
-            with requests.get(
-                f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            ) as response:
-                response.raise_for_status()
-                tag = response.json().get("tag_name", "")
-            return tag.lstrip("v") or None
         with requests.get(
-            f"https://pypi.org/pypi/{PYPI_PACKAGE}/json",
+            f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest",
             timeout=REQUEST_TIMEOUT_SECONDS,
         ) as response:
             response.raise_for_status()
-            version = response.json().get("info", {}).get("version")
-        return str(version) if version else None
+            tag = response.json().get("tag_name", "")
+        return tag.lstrip("v") or None
     except Exception:  # noqa: BLE001
         logger.debug("update check failed", exc_info=True)
         return None

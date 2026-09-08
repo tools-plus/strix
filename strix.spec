@@ -265,7 +265,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='strix',
+    name='strix-pentest',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

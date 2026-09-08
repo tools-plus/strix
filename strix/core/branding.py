@@ -18,6 +18,9 @@ from pathlib import Path
 #: The installed console script, used in help text and error hints.
 PROGRAM_NAME = "strix-pentest"
 
+#: The distribution name, as it appears in installed package metadata.
+DIST_NAME = "strix-pentest"
+
 #: Per-user state: config, OAuth tokens, MCP servers, caches.
 CONFIG_DIR_NAME = ".strix-pentest"
 

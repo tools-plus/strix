@@ -13,6 +13,8 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+from strix.core.branding import DIST_NAME
+
 
 _WINDOWS_AUTH_TIMEOUT = 10.0
 _PROCESS_EXIT_TIMEOUT = 5.0
@@ -186,6 +188,6 @@ def package_version() -> str:
     """Report the installed package version for the Go splash/stats
     ("dev" when metadata is unavailable)."""
     try:
-        return version("strix-agent")
+        return version(DIST_NAME)
     except PackageNotFoundError:
         return "dev"

@@ -1,5 +1,5 @@
 [project]
-name = "strix-agent"
+name = "strix-pentest"
 version = "1.6.2"
 description = "Open-source AI Hackers for your apps"
 readme = "README.md"
@@ -57,7 +57,7 @@ vertex = ["google-auth>=2.0.0"]
 bedrock = ["boto3>=1.28.0"]
 
 [project.scripts]
-strix = "strix.interface.main:main"
+strix-pentest = "strix.interface.main:main"
 
 [dependency-groups]
 dev = [

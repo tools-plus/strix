@@ -9,6 +9,7 @@ from pathlib import Path
 
 from strix.config import apply_config_override
 from strix.config.settings import DEFAULT_MAX_TURNS
+from strix.core.branding import DIST_NAME
 from strix.core.paths import run_dir_for, runtime_state_dir
 from strix.interface.scan_setup import attach_workspace_mount, build_targets_info
 from strix.interface.update_check import self_update
@@ -24,7 +25,7 @@ def get_version() -> str:
     try:
         from importlib.metadata import version
 
-        return version("strix-agent")
+        return version(DIST_NAME)
     except Exception:
         return "unknown"
 

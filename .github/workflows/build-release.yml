@@ -82,19 +82,19 @@ jobs:
           uv run pyinstaller strix.spec --noconfirm
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            PYI_BINARY="dist/strix.exe"
+            PYI_BINARY="dist/strix-pentest.exe"
             TUI_NAME="strix-tui.exe"
-            dist/strix.exe --version
+            dist/strix-pentest.exe --version
           else
-            PYI_BINARY="dist/strix"
+            PYI_BINARY="dist/strix-pentest"
             TUI_NAME="strix-tui"
-            dist/strix --version
+            dist/strix-pentest --version
           fi
           uv run pyi-archive_viewer -l "$PYI_BINARY" | grep -E "strix[/\\]+bin[/\\]+$TUI_NAME" >/dev/null
 
           if [[ "${{ matrix.target }}" == "linux-arm64" ]]; then
-            file dist/strix
-            file dist/strix | grep -q "ARM aarch64" || {
+            file dist/strix-pentest
+            file dist/strix-pentest | grep -q "ARM aarch64" || {
               echo "::error::linux-arm64 artifact is not an ARM aarch64 binary"
               exit 1
             }
@@ -104,17 +104,17 @@ jobs:
           mkdir -p dist/release
 
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp dist/strix.exe "dist/release/strix-${VERSION}-${{ matrix.target }}.exe"
-            (cd dist/release && 7z a "strix-${VERSION}-${{ matrix.target }}.zip" "strix-${VERSION}-${{ matrix.target }}.exe")
+            cp dist/strix-pentest.exe "dist/release/strix-pentest-${VERSION}-${{ matrix.target }}.exe"
+            (cd dist/release && 7z a "strix-pentest-${VERSION}-${{ matrix.target }}.zip" "strix-pentest-${VERSION}-${{ matrix.target }}.exe")
           else
-            cp dist/strix "dist/release/strix-${VERSION}-${{ matrix.target }}"
-            chmod +x "dist/release/strix-${VERSION}-${{ matrix.target }}"
-            tar -C dist/release -czvf "dist/release/strix-${VERSION}-${{ matrix.target }}.tar.gz" "strix-${VERSION}-${{ matrix.target }}"
+            cp dist/strix-pentest "dist/release/strix-pentest-${VERSION}-${{ matrix.target }}"
+            chmod +x "dist/release/strix-pentest-${VERSION}-${{ matrix.target }}"
+            tar -C dist/release -czvf "dist/release/strix-pentest-${VERSION}-${{ matrix.target }}.tar.gz" "strix-pentest-${VERSION}-${{ matrix.target }}"
           fi
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
-          name: strix-${{ matrix.target }}
+          name: strix-pentest-${{ matrix.target }}
           path: |
             dist/release/*.tar.gz
             dist/release/*.zip
