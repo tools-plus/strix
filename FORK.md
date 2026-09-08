@@ -52,6 +52,34 @@ Our diff against upstream is kept deliberately narrow:
 fork-only — and it is what catches a bad upstream sync before a release tag
 does.
 
+## Sandbox image
+
+Scans run in a Kali-based container holding the pentest toolchain: nmap, sqlmap,
+nuclei, subfinder, naabu, ffuf and wapiti from Kali; httpx, katana, vulnx,
+gospider, interactsh-client and govulncheck built from source; arjun, dirsearch
+and wafw00f via pipx; retire, eslint, ast-grep, tree-sitter and agent-browser
+via npm; Chromium for browser automation; trufflehog, gitleaks and trivy; and a
+generated root CA so the in-container Caido proxy can see TLS traffic. It runs
+as an unprivileged `pentester` user.
+
+No LLM credentials ever enter it — the container gets only proxy settings and
+the host UID/GID, and all inference happens in the host process. Subscription
+sign-in therefore needs nothing from the image.
+
+`.github/workflows/build-sandbox.yml` builds `containers/Dockerfile` for amd64
+and arm64 and publishes `ghcr.io/tools-plus/strix-sandbox`, which
+`STRIX_IMAGE` now defaults to. It needs no secrets: `GITHUB_TOKEN` with
+`packages: write` authenticates to GHCR. It runs on pushes touching
+`containers/**`, or on demand with an explicit tag.
+
+Publishing our own removes the last hard dependency on upstream
+infrastructure — an upstream retag or deletion of `usestrix/strix-sandbox:1.3.0`
+can no longer break our scans.
+
+> The first run must be triggered manually (**Actions → Build sandbox image →
+> Run workflow**), and the package defaults to private: make it public under
+> the repo's Packages settings, or scans will fail to pull it.
+
 ## Installing
 
 Our releases are built by `build-release.yml` and attached to the GitHub
