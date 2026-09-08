@@ -13,7 +13,22 @@ def test_resolves_common_bare_model_names() -> None:
     resolve_litellm_model.cache_clear()
     assert resolve_litellm_model("deepseek-v4-flash") == "deepseek/deepseek-v4-flash"
     assert resolve_litellm_model("openai/deepseek-v4-flash") == "deepseek/deepseek-v4-flash"
-    assert resolve_litellm_model("grok-4.5") == "xai/grok-4.5"
+    # grok-4.5 is carried by several LiteLLM providers (xai, openrouter,
+    # perplexity) at identical prices. The resolver only guesses from a bare
+    # name when the candidates agree on price, so any of them is a correct
+    # answer and pinning one alias would break on a LiteLLM catalogue reshuffle.
+    # What must hold is that the name it returns prices the model correctly.
+    resolved = resolve_litellm_model("grok-4.5")
+    assert resolved is not None
+    assert resolved.endswith("/grok-4.5")
+    assert (
+        litellm.model_cost[resolved]["input_cost_per_token"]
+        == (litellm.model_cost["xai/grok-4.5"]["input_cost_per_token"])
+    )
+    assert (
+        litellm.model_cost[resolved]["output_cost_per_token"]
+        == (litellm.model_cost["xai/grok-4.5"]["output_cost_per_token"])
+    )
     # MiniMax-M3 is sold by several LiteLLM providers at different prices, so
     # the resolver must not guess from its bare name. A provider-qualified
     # model remains deterministic.
