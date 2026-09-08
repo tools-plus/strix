@@ -88,6 +88,8 @@ class KimiProvider(SubscriptionProvider):
 
     flow = AuthFlow.DEVICE_CODE
     wire = Wire.OPENAI_CHAT
+    #: The device fingerprint is bound at login and must survive every refresh.
+    carry_over_fields = ("device_id",)
 
     # --- flow: device code ----------------------------------------------
 

@@ -179,6 +179,7 @@ def test_routes_through_litellm_matches_the_provider(
     [
         ("chatgpt/gpt-5.4", _SubscriptionResponsesModel),
         ("kimi/kimi-k3", _SubscriptionChatModel),
+        ("grok/grok-4.6", _SubscriptionResponsesModel),
     ],
 )
 def test_get_model_builds_the_wire_specific_subscription_model(

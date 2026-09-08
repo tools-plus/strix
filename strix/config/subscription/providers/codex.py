@@ -17,6 +17,7 @@ from strix.config.subscription.base import (
     SubscriptionAuthError,
     SubscriptionProvider,
     Wire,
+    responses_settings_overrides,
 )
 
 
@@ -152,22 +153,7 @@ class CodexProvider(SubscriptionProvider):
 
     def settings_overrides(self, reasoning_effort: str | None) -> dict[str, Any]:
         """The ChatGPT backend is stateless and wants encrypted reasoning echoed back."""
-        overrides: dict[str, Any] = {
-            "store": False,
-            "response_include": ["reasoning.encrypted_content"],
-        }
-        effort = reasoning_effort
-        if effort and effort != "none":
-            # Clamp to efforts the backend accepts.
-            match effort:
-                case "minimal":
-                    effort = "low"
-                case "xhigh" | "max":
-                    effort = "high"
-                case _:
-                    pass
-            overrides["reasoning_effort"] = effort
-        return overrides
+        return responses_settings_overrides(reasoning_effort)
 
     def error_hint(self, message: str) -> str | None:
         if "not supported when using codex with a chatgpt account" in message:

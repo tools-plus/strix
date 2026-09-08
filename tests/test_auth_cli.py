@@ -35,9 +35,16 @@ def test_default_provider_is_chatgpt() -> None:
 
 
 def test_usage_lists_every_registered_provider() -> None:
-    usage = auth_cli._usage()
+    # Rendered, not raw: the "[chatgpt|kimi|grok]" placeholder is valid console
+    # syntax that Rich parses as a style tag and silently drops unless markup
+    # is disabled, so the raw string passing proves nothing.
+    from rich.console import Console
+
+    console = Console(record=True, width=100)
+    auth_cli._print_usage(console)
+    rendered = console.export_text()
     for name in subscription.provider_names():
-        assert name in usage
+        assert name in rendered
 
 
 def test_unknown_subcommand_returns_usage_error() -> None:
@@ -128,7 +135,7 @@ def test_login_accepts_provider_aliases(provider: str, monkeypatch: pytest.Monke
     assert reached["flow"] is True
 
 
-@pytest.mark.parametrize("name", ["kimi", "kimi-code", "moonshot"])
+@pytest.mark.parametrize("name", ["kimi", "kimi-code", "moonshot", "grok", "xai", "supergrok"])
 def test_login_dispatches_device_code_flow(name: str, monkeypatch: pytest.MonkeyPatch) -> None:
     # A device-code provider must not start a loopback listener: that flow is
     # what makes sign-in work where no browser redirect can reach the terminal.
@@ -150,9 +157,9 @@ def test_login_dispatches_device_code_flow(name: str, monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(auth_cli, "_run_loopback_flow", _no_loopback)
     monkeypatch.setattr(auth_cli, "_run_device_code_flow", _fake_device)
-    kimi = subscription.get_provider("kimi")
-    assert kimi is not None
-    monkeypatch.setattr(kimi, "save_record", lambda _record: None)
+    provider = subscription.get_provider(name)
+    assert provider is not None
+    monkeypatch.setattr(provider, "save_record", lambda _record: None)
 
     assert auth_cli.run_auth(["login", name]) == 0
     assert reached["device"] is True
